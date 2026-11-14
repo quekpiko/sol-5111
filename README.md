@@ -6,9 +6,9 @@ Open `dist/index.html` directly in a desktop browser to play offline. To host th
 
 ## Explore the outpost
 
-Click a location to walk there and open its controls, or move with WASD and press E nearby. In setup, set a light level in at least one greenhouse tray. You can carry the sensor and spare battery from Storage to the solar array before launching. Start the mission when you are ready. Open **Hint** on the map or inside a module to see context-specific help.
+Click a location to walk there and open its controls, or move with WASD and press E nearby. In setup, set a light level in at least one greenhouse tray. You can carry the sensor and spare battery from Storage to the solar array before launching. The setup checklist links directly to the modules. Start the mission when you are ready. Open **Hint** on the map or inside a module to see context-specific help.
 
-Press Space or use the pause button to freeze time while planning. Opening NASA data or the astronaut editor pauses the clock. The simulation also pauses when the tab becomes hidden.
+Press Space or use the pause button to freeze time while planning. The pause controls let you restart the current mission after confirmation. Opening NASA data or the astronaut editor pauses the clock. The simulation also pauses when the tab becomes hidden.
 
 ## Publish with GitHub Pages
 

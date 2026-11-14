@@ -4,6 +4,8 @@ const Mission = (() => {
   const timeScale = 3;
   const spareCapacity = 24;
   const exposureLimit = 19;
+  const peakDustSolar = 1;
+  const clearSkySolar = 10;
   const foodRate = .55 / timeScale;
   const settings = {
     lights: { off: { power: 0, growth: 0 }, dim: { power: 1, growth: 2.05 }, full: { power: 3.9, growth: 3.5 } },
@@ -39,7 +41,8 @@ const Mission = (() => {
       })),
       airOn: true, waterOn: true, shelter: false, powered: true, minimumEnergy: scenario.battery,
       pack: "storage", reserve: 0, reserveUsed: 0, samples: [], analyzed: [], lab: null, failure: "",
-      sensor: "storage", readings: [], nextReading: 0
+      sensor: "storage", readings: [], nextReading: 0,
+      lightCuts: [], outage: 0, scrubberOff: 0, recyclerOff: 0, stormSheltered: 0, stormVentilated: 0
     };
   }
 
@@ -65,11 +68,23 @@ const Mission = (() => {
     return state.shelter ? .07 : .55;
   }
 
+  function solarPercent(output) {
+    return Math.round(100 * output / clearSkySolar);
+  }
+
+  function setTrayLight(state, index, light) {
+    const tray = state.trays[index];
+    if (state.time >= state.scenario.dust && settings.lights[light].power < settings.lights[tray.light].power) {
+      state.lightCuts.push({ index, time: state.time });
+    }
+    tray.light = light;
+  }
+
   function recordReading(state) {
     if (state.sensor !== "installed" || state.time < state.nextReading) return;
     const solar = solarAt(state.time, state.scenario);
     // The game uses normalized opacity inferred from the solar profile.
-    state.readings.push({ time: state.time, solar, opacity: (10 - solar) / 9 * 100 });
+    state.readings.push({ time: state.time, solar, opacity: (clearSkySolar - solar) / (clearSkySolar - peakDustSolar) * 100 });
     state.nextReading = state.time + 4;
   }
 
@@ -81,6 +96,9 @@ const Mission = (() => {
     const { net } = forecast(state, solarAt(start + seconds / 2, state.scenario));
     const stored = state.battery + state.reserve;
     const poweredSeconds = net < 0 ? Math.min(seconds, stored / -net) : seconds;
+    state.outage += seconds - poweredSeconds;
+    if (!state.airOn) state.scrubberOff += seconds;
+    if (!state.waterOn) state.recyclerOff += seconds;
     const reserveUsed = Math.min(state.reserve, Math.max(0, -(state.battery + net * seconds)));
     state.reserve -= reserveUsed;
     state.reserveUsed += reserveUsed;
@@ -114,6 +132,13 @@ const Mission = (() => {
     }
     const stormSeconds = Math.max(0, Math.min(state.time, particleEnd) - Math.max(start, particleStart));
     state.radiation += exposureRate(state) * stormSeconds;
+    if (state.shelter) {
+      state.stormSheltered += stormSeconds;
+      if (state.airOn) {
+        const poweredEnd = Math.min(start + poweredSeconds, particleEnd);
+        state.stormVentilated += Math.max(0, poweredEnd - Math.max(start, particleStart));
+      }
+    }
     if (state.lab) {
       state.lab.remaining -= poweredSeconds;
       if (state.lab.remaining <= 0) {
@@ -125,7 +150,7 @@ const Mission = (() => {
     state.failure = !state.air ? "air" : !state.water ? "water" : !state.food ? "food" : state.radiation >= exposureLimit ? "radiation" : "";
   }
 
-  return { spareCapacity, exposureLimit, scenarios, solarAt, newState, forecast, exposureRate, recordReading, advance };
+  return { spareCapacity, exposureLimit, peakDustSolar, scenarios, solarAt, solarPercent, newState, forecast, exposureRate, setTrayLight, recordReading, advance };
 })();
 
 if (typeof module !== "undefined") module.exports = Mission;

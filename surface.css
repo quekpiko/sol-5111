@@ -191,8 +191,6 @@ dialog figure img { display: block; width: 100%; height: auto; }
 .meter[data-meter="crop"] progress::-webkit-progress-value { background: #aeb77a; }
 .meter[data-meter="crop"] progress::-moz-progress-bar { background: #aeb77a; }
 dialog#interior { width: min(710px, calc(100% - 22px)); }
-#interior .drawer-head { position: sticky; top: -14px; z-index: 1; background: #201c15; padding-block: 4px 7px; }
-#interior .room-view[data-room="greenhouse"] { height: min(27dvh, 200px); }
 .room-trays, .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 10px; }
 .tray, .telemetry {
   padding: 9px; background: #292419; border: 1px solid #786747; border-radius: 4px;
@@ -221,4 +219,86 @@ dialog#interior { width: min(710px, calc(100% - 22px)); }
   .map-cargo { font-size: .58rem; }
   .tray, .telemetry { padding: 6px; }
   .tray-controls button { padding: 5px; font-size: .74rem; }
+}
+
+.setup { margin-bottom: 9px; }
+.setup h3 { margin-bottom: 5px; color: var(--amber); font: 700 .81rem var(--mono); }
+.setup ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; list-style: none; padding: 0; margin: 0; }
+.setup-step {
+  position: relative; width: 100%; height: 100%; border: 1px solid #806a49; padding: 7px 7px 7px 27px;
+  color: var(--ink); background: #272017; border-radius: 4px; text-align: start;
+}
+.setup-step::before { content: "○"; position: absolute; inset: 7px auto auto 8px; color: var(--amber); font-weight: 800; }
+.setup-step[data-done="true"]::before { content: "✓"; color: #c3dea9; }
+.setup-step[data-done="true"] { border-color: #7b9368; }
+.setup-step:hover { border-color: var(--amber); background: #3b3021; }
+.setup-step strong, .setup-step span { display: block; }
+.setup-step strong { font-size: .83rem; }
+.setup-step span { font-size: .73rem; color: #d8c6aa; }
+.mission-status { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.mission-status span { border: 1px solid #75613f; border-radius: 3px; padding: 3px 8px; color: #ffe3b8; font-size: .8rem; font-weight: 680; }
+.mission-status [data-done="true"], .mission-status [data-sheltered="true"] { color: #d4efb8; background: #273721; border-color: #748b59; }
+.mission-status [data-sheltered="false"] { color: #e2effa; background: #263746; border-color: #83accb; }
+
+.station-site { position: absolute; inset: 0; pointer-events: none; }
+.station-footprint { position: absolute; inset: 0; z-index: 1; cursor: pointer; pointer-events: auto; }
+.station-site .station { pointer-events: auto; }
+.station-site:is(:hover,:focus-within,[data-moving="true"]) .station { border-color: var(--amber); background: #543927; box-shadow: 0 0 12px #ffc65c80; }
+.station-site:is(:hover,:focus-within,[data-moving="true"]) .station-footprint { background: #ffd38d40; }
+.player[data-near-station="true"] > span { visibility: hidden; }
+.map-route {
+  position: absolute; bottom: 65px; left: 50%; z-index: 4; transform: translateX(-50%); pointer-events: none;
+  width: max-content; max-width: 90%; padding: 5px 10px; border: 1px solid #d9ad70; border-radius: 4px;
+  background: #291d13f2; color: #ffe1ae; font-weight: 720; font-size: .82rem;
+}
+.map-readout #solar-relative { display: block; color: #ded4bf; margin-top: 3px; font-size: .69rem; }
+body:has(#setup:not([hidden])) .terrain { height: clamp(320px, calc(100svh - 413px), 660px); }
+
+.meter { padding: 8px 9px; }
+.meter div { align-items: baseline; gap: 5px; }
+.meter strong { font-size: clamp(1rem, 1.65vw, 1.4rem); line-height: 1.18; font-variant-numeric: tabular-nums; }
+.meter small { font: 630 .78rem/1.25 var(--mono); color: #f1dac0; }
+.meter small.meter-activity { min-height: 0; font: inherit; font-size: .78rem; font-weight: 720; line-height: 1.2; color: #ffd393; }
+.meter[data-backup="true"] { background: #423020; box-shadow: inset 0 2px #e6aa56; }
+.meter[data-low="true"] { background: #44271f; box-shadow: inset 0 2px #ee8f72; }
+.meter[data-refilled="true"] { background: #35492b; box-shadow: inset 0 2px #b8df8f; }
+.meter[data-refilled="true"] .meter-activity { color: #e0f4c4; }
+.meter[data-low="true"] progress::-moz-progress-bar { background: #e78462; }
+
+#interior .room-header { position: sticky; top: -14px; z-index: 5; margin-bottom: 8px; padding: 4px 0; background: #201c15; }
+#interior .drawer-head { position: static; padding: 0; margin-bottom: 0; }
+#interior .room-view[data-room="greenhouse"] { height: min(18dvh, 138px); width: min(100%, 345px); }
+#room-alert { width: 100%; font: inherit; font-size: .85rem; font-weight: 600; line-height: 1.4; }
+.radio[data-event="dust"] h2 { color: #ffbd8c; }
+.radio:is([data-event="warning"],[data-event="shelter"]) h2 { color: #c5e5ff; }
+#room-alert strong, #room-alert span:not(:empty) { display: block; }
+#room-alert[data-event="particles"], .radio p#event-clock {
+  color: #e2eeff; background: #243b50; border-color: #9fc3e5;
+}
+.terrain[data-phase="shelter"] .weather { box-shadow: inset 0 0 95px #31365578; }
+#room-power-choice { color: #ffe3af; padding: 7px 9px; background: #3c2e1d; border-left: 2px solid #dbad61; margin-top: 6px; }
+.tray-controls button > strong { display: flex; justify-content: space-between; gap: 4px; }
+.tray-controls small { font-size: .72rem; line-height: 1.27; }
+.tray-controls small.tray-harvest { color: #e1edbf; }
+.tray-controls small.tray-change { margin-top: 3px; color: #ffdc9a; }
+.tray-controls small:empty { display: none; }
+.tray-selected { color: #e5eece; font-size: .72rem; }
+.tray-selected::before { content: "✓ "; }
+.restart-link { color: #ffe1ad; }
+#restart-confirm p { margin: 8px 0 12px; }
+#outcome-explanation { padding-inline-start: 1.25em; color: #f1debb; font-size: .9rem; }
+#outcome-explanation:empty { display: none; }
+#outcome-explanation li + li { margin-top: 5px; }
+
+@media (max-width: 660px) {
+  .setup ul { grid-template-columns: 1fr; gap: 4px; }
+  .setup-step { padding-block: 4px; }
+  .setup-step::before { top: 4px; }
+  .setup-step strong, .setup-step span { display: inline; }
+  .setup-step span { margin-inline-start: 5px; }
+  body:has(#setup:not([hidden])) .terrain { height: clamp(285px,48svh,380px); }
+  .map-readout #solar-relative { font-size: .61rem; }
+  .meter small { font-size: .68rem; }
+  .mission-bar nav { flex-wrap: wrap; }
+  .tray-controls button > strong { flex-wrap: wrap; }
 }
