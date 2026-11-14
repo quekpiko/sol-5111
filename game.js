@@ -1,7 +1,7 @@
 "use strict";
 
 const byId = (id) => document.getElementById(id);
-const { phases, initial, limits, defaults, simulate } = Mission;
+const { phases, initial, limits, defaults, simulate, isSuccess, historicalSols } = Mission;
 const reserveKeys = ["battery", "air", "water", "food", "crop", "radiation"];
 let language = readLanguage();
 let copy = languages[language];
@@ -19,7 +19,8 @@ function readPlan() {
     water: byId("water").checked,
     grow: Number(document.querySelector("input[name=grow]:checked").value),
     shelter: byId("shelter").checked,
-    spare: byId("use-cell").checked
+    spare: byId("use-cell").checked,
+    analysis: byId("analysis").checked
   };
 }
 
@@ -30,6 +31,16 @@ function setPlan(plan) {
   byId("shelter").disabled = phases[turn].status !== "STORM";
   byId("shelter").checked = plan.shelter;
   byId("use-cell").checked = Boolean(plan.spare && state.spare);
+  byId("analysis").checked = Boolean(plan.analysis && pendingSample());
+}
+
+function pendingSample() {
+  return state.samples.find((sample) => !state.analyzed.includes(sample));
+}
+
+function sampleName(sample) {
+  const key = sample === "ridge" ? "stationRidge" : "stationBasin";
+  return staticText[key][language === "uk" ? 1 : 0];
 }
 
 function renderTelemetry() {
@@ -41,9 +52,15 @@ function renderTelemetry() {
       <progress aria-label="${label}" value="${state[key]}" max="${limits[key]}"></progress>
     </div>`;
   }).join("");
+  byId("objectives").innerHTML = copy.objectives(history.length, phases.length, state.harvests, state.samples.length, state.analyzed.length)
+    .map(([label, complete]) => `<li data-complete="${complete}">${complete ? "✓" : "◇"} ${label}</li>`).join("");
 }
 
 function updatePlan() {
+  const sample = pendingSample();
+  byId("analysis-system").hidden = !sample;
+  byId("analysis").disabled = !sample;
+  byId("analysis-help").textContent = sample ? copy.scienceCost(sampleName(sample)) : copy.noSample;
   const plan = readPlan();
   const estimate = simulate(state, phases[turn], plan);
   byId("execute").disabled = !estimate.valid;
@@ -65,21 +82,24 @@ function updatePlan() {
 function renderTurn(plan = defaults(phases[turn])) {
   const phase = phases[turn];
   const next = phases[turn + 1];
-  byId("hero").dataset.weather = phase.status;
   byId("sol-label").textContent = copy.turnInfo(turn + 1, phases.length, phase.sol);
-  byId("sequence").innerHTML = copy.phases.map(([shortTitle], index) => `
-    <div class="seq-step" ${index === turn ? 'aria-current="step"' : ""}>
-      <b>${copy.turn(index + 1)}</b><strong>${shortTitle}</strong>
+  const chapter = Math.floor(turn / 6);
+  byId("sequence").innerHTML = copy.campaign.map((title, index) => `
+    <div class="seq-step" ${index === chapter ? 'aria-current="step"' : ""}>
+      <b>0${index + 1}</b><strong>${title}</strong>
     </div>`).join("");
   byId("signal").textContent = copy.statuses[phase.status];
   byId("signal").dataset.status = phase.status;
-  byId("event-title").textContent = copy.phases[turn][1];
-  byId("event-brief").textContent = copy.phases[turn][2];
+  const briefing = copy.phases.find(([status]) => status === phase.status);
+  byId("event-title").textContent = briefing[1];
+  byId("event-brief").textContent = briefing[2];
+  byId("chapter-brief").textContent = copy.chapterBrief[chapter];
+  byId("budget-source").textContent = historicalSols.includes(phase.sol) ? copy.observed : copy.modeled;
   byId("shelter-help").textContent = phase.status === "STORM"
     ? copy.shelter : copy.standby;
   byId("forecast").innerHTML = next
     ? `${copy.next} <b>${copy.forecast(next.solar, next.status === "STORM")}</b>`
-    : `<b>${copy.record}</b>`;
+    : "";
   byId("mission-jump").href = "#controls";
   byId("result").hidden = true;
   byId("command").hidden = false;
@@ -97,6 +117,7 @@ function selectedPlan(entry) {
   if (phases[entry.turn].status === "STORM") {
     choices.push(`${copy.shelterName} ${plan.shelter ? copy.on : copy.off}`);
   }
+  if (entry.result.sample) choices.push(copy.analysisLog(sampleName(entry.result.sample)));
   return choices.join(" · ");
 }
 
@@ -119,28 +140,68 @@ function renderLog(entry) {
     copy.batteryLog(result.after.battery, limits.battery, result.draw),
     result.harvested ? copy.harvestLog : copy.cropLog(result.growth)
   ];
+  if (result.sample) items.push(copy.analysisLog(sampleName(result.sample)));
   if (phases[entry.turn].status === "STORM") items.push(copy.exposureLog(result.after.radiation - entry.before.radiation));
   byId("log").innerHTML = `<ul class="log-items">${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
   if (entry.previous) byId("log").insertAdjacentHTML("beforeend", `
     <p class="compare"><b>${copy.same}</b><br>${copy.previous} · ${summary(entry.previous)}<br>${copy.replay} · ${summary(entry)}</p>`);
 }
 
+function renderScienceReport() {
+  const report = byId("science-report");
+  report.hidden = state.analyzed.length === 0;
+  report.replaceChildren();
+  if (report.hidden) return;
+  const heading = document.createElement("h3");
+  heading.textContent = copy.scienceTitle;
+  report.append(heading);
+  for (const sample of state.analyzed) {
+    const observation = document.createElement("p");
+    observation.textContent = copy.scienceFindings[sample];
+    report.append(observation);
+  }
+  if (state.analyzed.length === 2) {
+    const question = document.createElement("p");
+    const feedback = document.createElement("p");
+    question.textContent = copy.compareEvidence;
+    feedback.setAttribute("aria-live", "polite");
+    const answers = document.createElement("div");
+    answers.className = "action-row";
+    copy.scienceChoices.forEach((choice, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary";
+      button.textContent = choice;
+      button.onclick = () => { feedback.textContent = copy.scienceFeedback[index]; };
+      answers.append(button);
+    });
+    report.append(question, answers, feedback);
+  }
+}
+
 function showResult(entry) {
-  const success = !entry.result.failure && state.harvests > 0;
+  const success = !entry.result.failure && isSuccess(state);
   byId("mission-jump").href = "#result";
   byId("command").hidden = true;
   byId("result").hidden = false;
-  byId("result-title").textContent = success ? copy.success : copy.interrupted;
+  byId("result-title").textContent = success ? copy.success : entry.result.failure ? copy.interrupted : copy.incomplete;
   byId("result-explanation").textContent = success
     ? copy.successBody(state.harvests)
-    : copy.failures[entry.result.failure] ?? copy.noHarvest;
+    : copy.failures[entry.result.failure] ?? copy.missingObjectives;
   const key = success && !entry.previous ? (history.find((item) => item.result.harvested) ?? entry) : entry;
   byId("decision").innerHTML = entry.previous
     ? `<div><h3>${copy.previous} · ${copy.sol(phases[entry.turn].sol)}</h3><p>${selectedPlan(entry.previous)}<br>${summary(entry.previous)}</p></div>
        <div><h3>${copy.sameReserves}</h3><p>${selectedPlan(entry)}<br>${summary(entry)}</p></div>`
     : `<div><h3>${copy.decision(phases[key.turn].sol)}</h3><p>${selectedPlan(key)}</p></div>
        <div><h3>${copy.outcome}</h3><p>${summary(key)}</p></div>`;
-  byId("replay-key").onclick = () => replay(key);
+  const review = byId("review-turn");
+  review.hidden = false;
+  review.setAttribute("aria-label", copy.reviewLabel);
+  review.replaceChildren(...history.map((item, index) => new Option(
+    copy.turnInfo(index+1, phases.length, phases[index].sol), index, false, item.turn === key.turn
+  )));
+  byId("replay-key").onclick = () => replay(history[Number(review.value)]);
+  renderScienceReport();
   renderTelemetry();
 }
 
@@ -162,7 +223,7 @@ function execute() {
   }
   turn += 1;
   turnStart = state;
-  renderTurn();
+  renderTurn({ ...plan, analysis: false, shelter: phases[turn].status === "STORM" });
   window.dispatchEvent(new Event("mission-state"));
   renderLog(entry);
 }
@@ -224,6 +285,15 @@ function handlePack(action) {
   return true;
 }
 
+function collectSample(sample) {
+  if (done || phases[turn].status === "STORM" || state.samples.includes(sample)) return false;
+  state = { ...state, samples: [...state.samples, sample] };
+  renderTelemetry();
+  updatePlan();
+  return true;
+}
+
+byId("analysis").addEventListener("change", updatePlan);
 byId("use-cell").addEventListener("change", updatePlan);
 byId("switches").addEventListener("change", updatePlan);
 byId("execute").addEventListener("click", execute);

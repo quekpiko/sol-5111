@@ -1,6 +1,18 @@
 "use strict";
 
 const staticText = {
+  stationRidge: ["Rock outcrop", "Скельний вихід"],
+  stationBasin: ["Regolith site", "Ділянка реголіту"],
+  objectiveTitle: ["MISSION OBJECTIVES", "ЦІЛІ МІСІЇ"],
+  analysis: ["Analyze a sample", "Проаналізувати зразок"],
+  defenseSources: ["Technical sources for the simulation", "Технічні джерела симуляції"],
+  paperPower: ["NASA NTRS · Mars Surface Power Generation", "NASA NTRS · Енергетика на поверхні Марса"],
+  paperPowerUse: [" — dust opacity explains the drop in available solar energy.", " — пил знижує прозорість атмосфери й вихід сонячної енергії."],
+  paperVeggie: ["NASA NTRS · Veggie technical paper", "NASA NTRS · Технічна доповідь Veggie"],
+  paperVeggieUse: [" — light, water and delayed growth. The ISS lettuce experiment took 33 days.", " — світло, вода й тривалість росту. Експеримент із салатом на МКС тривав 33 дні."],
+  paperSampling: ["NASA NTRS · Perseverance presentation", "NASA NTRS · Презентація Perseverance"],
+  paperSamplingUse: [" — samples are collected from different targets with context. The lab and its results in this mission are fictional.", " — зразки беруть із різних ділянок і фіксують місце відбору. Лабораторія та її результати в місії змодельовані."],
+  briefTitle: ["Mars outpost", "Марсіанська база"],
   commander: ["MISSION COMMANDER", "КОМАНДИР МІСІЇ"],
   editAvatar: ["Customize astronaut", "Налаштувати астронавта"],
   closeAvatar: ["Close astronaut editor", "Закрити редактор астронавта"],
@@ -23,7 +35,7 @@ const staticText = {
   surfaceLabel: ["MARS SURFACE", "ПОВЕРХНЯ МАРСА"],
   surface: ["Explore the outpost", "Досліди базу"],
   toControls: ["Mission controls ↓", "Керування місією ↓"],
-  surfaceHelp: ["Click or tap the terrain to walk, or focus the map and use the arrow keys or WASD. Approach a module and press E or use the action button.", "Натисни на місцевість, щоб іти, або вибери карту й рухайся стрілками чи WASD. Підійди до модуля та натисни E або кнопку дії."],
+  surfaceHelp: ["Walk with WASD, arrow keys or a tap. Press E near a module to interact.", "Рухайся за допомогою WASD, стрілок або натискання на карту. Поруч із модулем натисни E."],
   fieldRoute: ["Walk to a module", "Підійти до модуля"],
   fieldSelect: ["Choose a module", "Вибери модуль"],
   stationSolar: ["Solar array", "Сонячні панелі"],
@@ -42,22 +54,6 @@ const staticText = {
   "trainer": [
     "JUNIOR ASTRONAUT MISSION TRAINER",
     "ТРЕНАЖЕР ДЛЯ ЮНИХ АСТРОНАВТІВ"
-  ],
-  "headlineFirst": [
-    "Keep your Mars",
-    "Врятуй базу"
-  ],
-  "headlineLast": [
-    "outpost alive",
-    "на Марсі"
-  ],
-  "intro": [
-    "Lead a crew through six turns. Keep air and water flowing, bring in a greenhouse harvest, and shelter from a solar storm.",
-    "Проведи екіпаж через шість ходів. Забезпеч повітря й воду, збери врожай у теплиці та захисти екіпаж від сонячної бурі."
-  ],
-  "photoCredit": [
-    "Mars panorama · NASA/JPL-Caltech/ASU/MSSS",
-    "Панорама Марса · NASA/JPL-Caltech/ASU/MSSS"
   ],
   "telemetry": [
     "OUTPOST TELEMETRY",
@@ -108,8 +104,8 @@ const staticText = {
     "Освітлення теплиці"
   ],
   "greenhouseHelp": [
-    "Growing uses 1 water. Harvest at 10 growth.",
-    "Ріст потребує 1 од. води. Урожай дозріває за 10 балів росту."
+    "Growing uses 1 water. Harvest at 8 growth.",
+    "Ріст потребує 1 од. води. Урожай дозріває за 8 балів росту."
   ],
   "lightsOff": [
     "Off",
@@ -208,8 +204,8 @@ const staticText = {
     "2018 · Пилова буря, яку спостерігав Opportunity"
   ],
   "dustBody": [
-    "Opportunity had 21 Wh available on sol 5111. Five approximate readings of the descending energy curve plus the published endpoint set the six solar budgets (10, 10, 7, 6, 2, 1). The turns sample different sols and compress time.",
-    "На 5111-й сол марсохід Opportunity мав 21 Вт·год доступної енергії. П’ять приблизних значень з графіка та опубліковане кінцеве вимірювання визначають виробіток панелей у шести ходах (10, 10, 7, 6, 2, 1). Ходи відповідають вибраним марсіанським добам і стискають перебіг подій."
+    "Opportunity had 21 Wh available on sol 5111. Six points derived from the chart anchor the tightening of the power budget. Intermediate and recovery turns are modeled. Sol labels indicate selected dates in the scenario, and turns compress time.",
+    "На 5111-й сол марсохід Opportunity мав 21 Вт·год доступної енергії. Шість точок із графіка задають падіння виробітку. Проміжні значення й відновлення змодельовано. Номери солів позначають вибрані дати сценарію, а час у грі стислий."
   ],
   "chartLink": [
     "Original NASA chart ↗",
@@ -315,7 +311,7 @@ const languages = {
       settings: "Current plan",
       notes: {
         solar: "In 2018, dust blocked sunlight. On sol 5111, Opportunity had just 21 Wh available. The mission uses a scaled version of NASA’s energy curve.",
-        greenhouse: "NASA’s Veggie experiment used LEDs and water to grow lettuce. A harvest took 33 days. The simulation compresses growth across several turns.",
+        greenhouse: "NASA’s Veggie experiment used LEDs and water to grow lettuce. A harvest took 33 days. This simulation compresses crop growth and treats harvests as supplemental food.",
         habitat: "The ISS life support system cleans cabin air and recycles water. Both functions depend on equipment that needs electrical energy.",
         shelter: "Curiosity detected a solar particle surge in May 2024. Physical material blocks some particles. In the game the extra power is for ventilation.",
         storage: "A battery can cover a temporary drop in solar generation. This spare pack holds 5 teaching units and cannot be recharged during the scenario."
@@ -323,14 +319,46 @@ const languages = {
       links: { solar: "NASA Opportunity chart", greenhouse: "NASA Veggie experiments", habitat: "NASA life support", shelter: "NASA Curiosity observations" }
     },
     defaultCallSign: "Cadet",
+    campaign: ["Prepare", "Survive the storms", "Recover & report"],
+    chapterBrief: [
+      "Build battery reserves, start the greenhouse and collect samples from two sites.",
+      "Dust weakens the solar array. Protect the food supply and move the crew to shelter when the particle storm arrives.",
+      "Recovery is a modeled scenario. Restore supplies, finish the lab analyses and compare the evidence."
+    ],
+    modeled: "Scenario estimate",
+    reviewLabel: "Choose a turn to replay",
+    incomplete: "Mission objectives incomplete.",
+    observed: "Anchored to NASA rover data",
+    objectives: (played, total, harvests, collected, analyzed) => [
+      [`Keep the crew safe · ${played}/${total} turns`, played === total],
+      [`Supplement food · ${harvests}/2 harvests`, harvests >= 2],
+      [`Collect ${collected}/2 samples · analyze ${analyzed}/2`, analyzed === 2]
+    ],
+    scienceCost: (sample) => `${sample} · 3 energy units · 1 turn`,
+    noSample: "Collect a sample at the outcrop or regolith site first.",
+    analysisLog: (sample) => `Lab complete · ${sample}`,
+    sampling: "Collect and label sample",
+    sampleClosed: "Field sampling is closed.",
+    sampled: "Sample cataloged. Schedule the analysis after reaching the habitat.",
+    unsafeSampling: "Sampling is suspended during the solar particle event.",
+    openLab: "Queue sample analysis",
+    labQueued: "Analysis queued. Run the turn to process the sample.",
+    missingObjectives: "The crew survived. An objective remains incomplete. Replay a turn to change your plan.",
+    scienceTitle: "Science report · simulated observations",
+    scienceFindings: {
+      ridge: "Rock outcrop · coarse, interlocking grains. This texture supports slow cooling. It does not establish the rock’s age.",
+      basin: "Regolith site · mixed small fragments and fine dust. Transport or weathering can produce this mixture. Composition alone does not establish that water was present."
+    },
+    compareEvidence: "Compare both observations. Which claim needs another measurement?",
+    scienceChoices: ["The samples have different textures.", "The samples prove liquid water was present."],
+    scienceFeedback: ["Texture can be described directly from the observations. Try the other claim.", "Yes. Proving past liquid water needs more evidence, such as mineralogy and geological context."],
     reserves: ["Battery", "Air", "Water", "Food", "Crop", "Exposure"],
     phases: [
-      ["Clear", "Clear horizon", "Your solar panels are at full output. Build a battery reserve before the dust arrives."],
-      ["Watch", "Dust on the horizon", "A dust front is approaching. Charge the battery or use the surplus to push the crop closer to harvest."],
-      ["Dust", "The sky darkens", "Dust is blocking sunlight. Consider dimming the greenhouse to save power for another turn."],
-      ["Reserves", "Running on reserves", "The solar array cannot run every system. Check how much charge your plan leaves for the last two turns."],
-      ["Alert", "Solar particle alert", "A separate solar storm is forecast for the next turn. Save power to ventilate the shielded shelter."],
-      ["Shelter", "Shelter window", "Solar particles are arriving. Move the crew to the shielded shelter and power its ventilation. The dust is still limiting solar output."]
+      ["NORMAL", "Clear skies", "Use the stronger solar output to grow food, charge the battery or run an analysis."],
+      ["WATCH", "Dust watch", "Check the next turn’s solar forecast and save a buffer before production falls."],
+      ["DUST", "Reduced sunlight", "Compare the solar forecast with your draw. Store power for critical systems and choose when the lab can run."],
+      ["ALERT", "Solar particle alert", "A separate solar particle storm is approaching. Preserve power for shelter ventilation."],
+      ["STORM", "Solar particle storm", "Move the crew into the shielded shelter and use 1 unit of energy for ventilation. Suspend field sampling."]
     ],
     statuses: { NORMAL: "NORMAL", WATCH: "WATCH", DUST: "DUST", ALERT: "ALERT", STORM: "STORM" },
     turn: (turn) => `TURN ${turn}`,
@@ -362,18 +390,17 @@ const languages = {
     sameReserves: "Replay · same starting reserves",
     batteryLog: (battery, cap, draw) => `Battery charge ${battery}/${cap} after using ${draw} units.`,
     cropLog: (growth) => `Crop +${growth} growth. The crew used 1 ration.`,
-    harvestLog: "Harvest brought in 3 food units. The crop tracker reset.",
+    harvestLog: "Harvest brought in 5 food units. The crop tracker reset.",
     exposureLog: (points) => `Radiation exposure +${points}.`,
     success: "Crew safe. Harvest in.",
     interrupted: "Mission interrupted.",
-    successBody: (harvests) => `You completed all six turns and brought in ${harvests} harvest${harvests === 1 ? "" : "s"}. Check how your plan affected the base.`,
+    successBody: (harvests) => `You completed the mission, analyzed both samples and brought in ${harvests} harvest${harvests === 1 ? "" : "s"}. Check how your plan affected the base.`,
     failures: {
       air: "The air reserve ran out. The crew needs a powered scrubber or enough reserve to bridge outages.",
       water: "The water reserve ran out. Power the recycler before the greenhouse and crew exhaust the supply.",
       food: "The last ration ran out before the crew had enough food. Start growing earlier to reach harvest on time.",
       radiation: "Exposure exceeded the training limit. Move the crew into the shielded shelter and budget 1 unit for ventilation."
     },
-    noHarvest: "The crew finished the scenario without a greenhouse harvest. Grow earlier so the crop reaches 10 growth.",
     decision: (sol) => `Decision on sol ${sol}`,
     outcome: "Outcome of that turn"
   },
@@ -394,7 +421,7 @@ const languages = {
       settings: "Поточний план",
       notes: {
         solar: "У 2018 році пил затулив сонце. На 5111-й сол Opportunity мав лише 21 Вт·год. Гра використовує масштабовану криву енергії з графіка NASA.",
-        greenhouse: "У досліді NASA Veggie салат вирощували за допомогою світлодіодів і води. Урожай зібрали через 33 дні. У грі ріст рослин стисло до кількох ходів.",
+        greenhouse: "У досліді NASA Veggie салат вирощували за допомогою світлодіодів і води. Урожай зібрали через 33 дні. Гра стискає час росту, а врожай доповнює пайки.",
         habitat: "Система життєзабезпечення МКС очищує повітря й переробляє воду. В обох випадках обладнанню потрібна електроенергія.",
         shelter: "У травні 2024 року Curiosity зафіксував сплеск потоку сонячних частинок. Матеріал укриття затримує частину частинок. У грі додаткова енергія потрібна для вентиляції.",
         storage: "Батарея покриває тимчасове падіння виробітку панелей. У цій запасній батареї 5 ігрових одиниць, і під час сценарію її заряд не поповнюється."
@@ -402,14 +429,46 @@ const languages = {
       links: { solar: "Графік Opportunity від NASA", greenhouse: "Досліди NASA Veggie", habitat: "Життєзабезпечення NASA", shelter: "Спостереження Curiosity" }
     },
     defaultCallSign: "Кадет",
+    campaign: ["Підготовка", "Пережити бурі", "Відновлення й звіт"],
+    chapterBrief: [
+      "Накопич заряд, запусти теплицю та збери зразки з двох ділянок.",
+      "Пил послаблює виробіток панелей. Збережи їжу й переведи екіпаж в укриття, коли долетять сонячні частинки.",
+      "Відновлення змодельоване. Поповни запаси, заверш аналіз зразків і порівняй результати."
+    ],
+    modeled: "Розрахункове значення сценарію",
+    reviewLabel: "Вибери хід для повтору",
+    incomplete: "Цілі місії виконано частково.",
+    observed: "Орієнтир із даних марсохода NASA",
+    objectives: (played, total, harvests, collected, analyzed) => [
+      [`Захист екіпажу · ${played}/${total} ходів`, played === total],
+      [`Поповнення їжі · ${harvests}/2 урожаї`, harvests >= 2],
+      [`Зразки ${collected}/2 · аналіз ${analyzed}/2`, analyzed === 2]
+    ],
+    scienceCost: (sample) => `${sample} · 3 од. енергії · 1 хід`,
+    noSample: "Спочатку збери зразок на ділянці скельного виходу або реголіту.",
+    analysisLog: (sample) => `Аналіз завершено · ${sample}`,
+    sampling: "Відібрати й підписати зразок",
+    sampleClosed: "Польовий відбір завершено.",
+    sampled: "Зразок зареєстровано. Заплануй аналіз у житловому модулі.",
+    unsafeSampling: "Під час сонячної бурі відбір зразків призупинено.",
+    openLab: "Запланувати аналіз",
+    labQueued: "Аналіз заплановано. Виконай хід, щоб обробити зразок.",
+    missingObjectives: "Екіпаж вижив, але частина цілей лишилася невиконаною. Переграй один із ходів, щоб змінити план.",
+    scienceTitle: "Науковий звіт · змодельовані спостереження",
+    scienceFindings: {
+      ridge: "Скельний вихід · грубі зчеплені зерна. Така текстура узгоджується з повільним охолодженням, але не визначає вік породи.",
+      basin: "Ділянка реголіту · дрібні уламки й пил. Така суміш може утворитися під час перенесення або вивітрювання. Сам склад суміші не доводить, що тут була вода."
+    },
+    compareEvidence: "Порівняй спостереження. Для якого твердження потрібне додаткове вимірювання?",
+    scienceChoices: ["Зразки мають різну текстуру.", "Зразки доводять, що тут була рідка вода."],
+    scienceFeedback: ["Різницю текстур видно безпосередньо у зразках.", "Так. Для висновку про рідку воду потрібні додаткові дані, як-от мінеральний склад і геологічний контекст."],
     reserves: ["Батарея", "Повітря", "Вода", "Їжа", "Ріст рослин", "Опромінення"],
     phases: [
-      ["Ясно", "Чисте небо", "Сонячні панелі працюють на повну. Заряди батарею, поки пилова буря ще далеко."],
-      ["Увага", "Пил на горизонті", "Наближається пилова буря. Заряди батарею або витрать надлишок енергії, щоб наблизити збір урожаю."],
-      ["Пил", "Небо темніє", "Пил затуляє сонце. Можеш приглушити світло в теплиці, щоб зберегти енергію на наступний хід."],
-      ["Запаси", "Працюємо від батареї", "Панелі не можуть живити всі системи. Перевір, скільки заряду залишиться на два останні ходи."],
-      ["Тривога", "Попередження про сонячну бурю", "На наступному ході очікується окрема сонячна буря. Збережи заряд для вентиляції захищеного укриття."],
-      ["Укриття", "Час перейти в укриття", "До Марса долітають частинки від сонячної бурі. Переведи екіпаж в укриття й увімкни вентиляцію. Пил досі зменшує виробіток панелей."]
+      ["NORMAL", "Ясне небо", "Використай вищий виробіток панелей, щоб виростити їжу, зарядити батарею або провести аналіз."],
+      ["WATCH", "Пил на горизонті", "Перевір прогноз виробітку й накопич заряд до того, як панелі почнуть давати менше енергії."],
+      ["DUST", "Слабке сонячне світло", "Порівняй виробіток зі споживанням. Збережи заряд для критичних систем і вибери час для роботи лабораторії."],
+      ["ALERT", "Попередження про сонячну бурю", "Наближається окрема буря сонячних частинок. Збережи заряд для вентиляції укриття."],
+      ["STORM", "Буря сонячних частинок", "Екіпажу потрібне захищене укриття й 1 одиниця енергії для вентиляції. Збір зразків призупинено."]
     ],
     statuses: { NORMAL: "НОРМА", WATCH: "УВАГА", DUST: "ПИЛ", ALERT: "ТРИВОГА", STORM: "БУРЯ" },
     turn: (turn) => `ХІД ${turn}`,
@@ -441,18 +500,17 @@ const languages = {
     sameReserves: "Повтор · ті самі початкові запаси",
     batteryLog: (battery, cap, draw) => `Заряд батареї ${battery}/${cap} після витрати ${draw} од.`,
     cropLog: (growth) => `Ріст рослин +${growth}. Екіпаж використав 1 пайок.`,
-    harvestLog: "Урожай поповнив запаси їжі на 3 од. Лічильник росту скинуто.",
+    harvestLog: "Урожай поповнив запаси їжі на 5 од. Лічильник росту скинуто.",
     exposureLog: (points) => `Опромінення +${points}.`,
     success: "Екіпаж у безпеці. Урожай зібрано.",
     interrupted: "Місію перервано.",
-    successBody: (harvests) => `Ти завершив усі шість ходів. Кількість зібраних урожаїв — ${harvests}. Перевір, як твоє рішення вплинуло на базу.`,
+    successBody: (harvests) => `Ти завершив місію й проаналізував обидва зразки. Кількість зібраних урожаїв — ${harvests}. Перевір, як твоє рішення вплинуло на базу.`,
     failures: {
       air: "Запас повітря вичерпався. Живи очищувач або накопич достатньо повітря, щоб пережити перебої.",
       water: "Запас води вичерпався. Увімкни переробку води, поки екіпаж і теплиця не витратили весь запас.",
       food: "Останній пайок закінчився. Почни вирощувати рослини раніше, щоб устигнути зібрати врожай.",
       radiation: "Перевищено ігрову межу опромінення. Переведи екіпаж у захищене укриття й виділи 1 од. енергії на вентиляцію."
     },
-    noHarvest: "Екіпаж завершив місію без урожаю. Почни вирощувати рослини раніше, щоб набрати 10 балів росту.",
     decision: (sol) => `Рішення на ${sol}-й сол`,
     outcome: "Результат цього ходу"
   }

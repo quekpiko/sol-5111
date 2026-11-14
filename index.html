@@ -26,19 +26,15 @@
     </nav>
   </header>
   <main class="layout">
-    <section class="overview" aria-labelledby="mission-name">
-      <div class="hero" id="hero" data-weather="NORMAL">
-        <div class="hero-body">
-          <p class="eyebrow" data-i18n="trainer">JUNIOR ASTRONAUT MISSION TRAINER</p>
-          <h1 id="mission-name"><span class="hero-title" data-i18n="headlineFirst">Keep your Mars</span><br><span class="hero-title" data-i18n="headlineLast">outpost alive</span><span>.</span></h1>
-          <p data-i18n="intro">Lead a crew through six turns. Keep air and water flowing, bring in a greenhouse harvest, and shelter from a solar storm.</p>
-        </div>
-        <p class="credit" data-i18n="photoCredit">Mars panorama · NASA/JPL-Caltech/ASU/MSSS</p>
+    <div class="mission-heading">
+      <div>
+        <p class="eyebrow" data-i18n="trainer">JUNIOR ASTRONAUT MISSION TRAINER</p>
+        <h1 id="mission-name" data-i18n="briefTitle">Mars outpost</h1>
       </div>
       <div class="sequence" id="sequence" aria-label="Mission timeline" data-i18n-aria-label="timeline"></div>
-    </section>
-
-
+    </div>
+    <div class="mission-grid">
+      <div class="scene-column">
     <section class="panel commander" aria-labelledby="commander-title">
       <div class="commander-profile">
         <div class="astronaut" id="avatar-card" data-helmet="classic" data-suit="orange" aria-hidden="true">
@@ -54,20 +50,22 @@
 
     <section class="panel surface" aria-labelledby="surface-title">
       <div class="section-title">
-        <div><p class="eyebrow" data-i18n="surfaceLabel">MARS SURFACE</p><h2 id="surface-title" data-i18n="surface">Explore the outpost</h2></div>
+        <div><h2 id="surface-title" data-i18n="surface">Explore the outpost</h2></div>
         <a class="quiet control-link" id="mission-jump" href="#controls" data-i18n="toControls">Mission controls ↓</a>
       </div>
-      <p id="surface-instructions" data-i18n="surfaceHelp">Click or tap the terrain to walk, or focus the map and use the arrow keys or WASD. Approach a module and press E or use the action button.</p>
-      <div class="terrain" id="terrain" tabindex="0" role="region" aria-labelledby="surface-title" aria-describedby="surface-instructions">
-        <canvas id="surface-ground" aria-hidden="true"></canvas>
+
+      <div class="terrain" id="terrain" data-weather="NORMAL" tabindex="0" role="region" aria-labelledby="surface-title" aria-describedby="surface-instructions">
+        <div class="surface-art" aria-hidden="true"></div>
         <div class="surface-vignette" aria-hidden="true"></div>
         <div id="walk-marker" class="walk-marker" hidden aria-hidden="true"></div>
         <div class="surface-hud" aria-hidden="true"><span class="hud-dot"></span><b id="surface-signal"></b><span> / </span><span id="surface-sol"></span></div>
-        <div class="station solar" data-station="solar"><i aria-hidden="true"><em></em></i><span data-i18n="stationSolar">Solar array</span></div>
-        <div class="station greenhouse" data-station="greenhouse"><i aria-hidden="true"><em></em></i><span data-i18n="stationGreenhouse">Greenhouse</span></div>
-        <div class="station habitat" data-station="habitat"><i aria-hidden="true"><em></em></i><span data-i18n="stationHabitat">Habitat</span></div>
-        <div class="station shelter" data-station="shelter"><i aria-hidden="true"><em></em></i><span data-i18n="stationShelter">Shelter</span></div>
-        <div class="station storage" data-station="storage"><i aria-hidden="true"><em></em></i><span data-i18n="stationStorage">Storage</span></div>
+        <div class="station solar" data-station="solar"><i aria-hidden="true"></i><span data-i18n="stationSolar">Solar array</span></div>
+        <div class="station greenhouse" data-station="greenhouse"><i aria-hidden="true"></i><span data-i18n="stationGreenhouse">Greenhouse</span></div>
+        <div class="station habitat" data-station="habitat"><i aria-hidden="true"></i><span data-i18n="stationHabitat">Habitat</span></div>
+        <div class="station shelter" data-station="shelter"><i aria-hidden="true"></i><span data-i18n="stationShelter">Shelter</span></div>
+        <div class="station storage" data-station="storage"><i aria-hidden="true"></i><span data-i18n="stationStorage">Storage</span></div>
+        <div class="station sample-site" data-station="ridge"><i aria-hidden="true"></i><span data-i18n="stationRidge">Rock outcrop</span></div>
+        <div class="station sample-site" data-station="basin"><i aria-hidden="true"></i><span data-i18n="stationBasin">Regolith site</span></div>
         <div class="field-cell" id="field-cell" aria-hidden="true">ϟ</div>
         <div class="field-player" id="field-player" aria-hidden="true">
           <div class="astronaut field-model" id="avatar-field" data-helmet="classic" data-suit="orange">
@@ -96,17 +94,39 @@
           <option value="habitat" data-i18n="stationHabitat">Habitat</option>
           <option value="shelter" data-i18n="stationShelter">Shelter</option>
           <option value="storage" data-i18n="stationStorage">Storage</option>
+          <option value="ridge" data-i18n="stationRidge">Rock outcrop</option>
+          <option value="basin" data-i18n="stationBasin">Regolith site</option>
         </select>
       </div>
       <div class="field-note" id="field-note" hidden aria-live="polite"></div>
+      <p id="surface-instructions" data-i18n="surfaceHelp">Walk with WASD, arrow keys or a tap. Press E near a module to interact.</p>
     </section>
 
+      <aside class="briefing" aria-label="Mission briefing and log" data-i18n-aria-label="brief">
+        <section class="panel briefing-card">
+          <div class="section-title">
+            <p class="eyebrow" data-i18n="control">MISSION CONTROL</p><span class="signal" id="signal"></span>
+          </div>
+          <h2 id="event-title"></h2>
+          <p id="event-brief"></p><p id="chapter-brief"></p>
+          <div class="forecast" id="forecast"></div>
+        </section>
+        <section class="panel briefing-card">
+          <p class="eyebrow" data-i18n="log">FLIGHT LOG</p>
+          <h2 id="log-heading"></h2>
+          <div id="log" aria-live="polite"></div>
+          <button class="secondary" type="button" id="rewind" hidden><span data-i18n="rewind">↶ Replay last turn</span></button>
+        </section>
+      </aside>
+      </div>
+      <div class="console-column">
     <section class="panel telemetry" aria-labelledby="telemetry-heading">
       <div class="section-title">
         <div><p class="eyebrow" data-i18n="telemetry">OUTPOST TELEMETRY</p><h2 id="telemetry-heading" data-i18n="reserves">Base reserves</h2></div>
         <span class="muted text-small" data-i18n="training">Training units</span>
       </div>
       <div class="reserves" id="reserves"></div>
+      <div class="objectives"><p class="eyebrow" data-i18n="objectiveTitle">MISSION OBJECTIVES</p><ul id="objectives"></ul></div>
     </section>
 
     <div class="command-grid" id="command">
@@ -115,7 +135,7 @@
           <div><p class="eyebrow" id="sol-label"></p><h2 id="control-heading" tabindex="-1" data-i18n="allocate">Allocate power</h2></div>
           <div class="budget"><strong id="available"></strong><span data-i18n="available">energy available</span></div>
         </div>
-        <div class="budget-detail" id="budget-detail"></div>
+        <div class="budget-detail" id="budget-detail"></div><p class="provenance" id="budget-source"></p>
         <label class="reserve-toggle" id="reserve-toggle" hidden>
           <input type="checkbox" id="use-cell"> <span id="cell-label"></span>
         </label>
@@ -131,7 +151,7 @@
           </div>
           <fieldset class="grow system">
             <legend class="sr-only" data-i18n="greenhouse">Greenhouse lights</legend>
-            <div><b data-i18n="greenhouse">Greenhouse lights</b><small data-i18n="greenhouseHelp">Growing uses 1 water. Harvest at 10 growth.</small></div>
+            <div><b data-i18n="greenhouse">Greenhouse lights</b><small data-i18n="greenhouseHelp">Growing uses 1 water. Harvest at 8 growth.</small></div>
             <div class="choices">
               <label><input name="grow" type="radio" value="0" checked><span><span data-i18n="lightsOff">Off</span> <small data-i18n="costZero">0 units</small></span></label>
               <label><input name="grow" type="radio" value="2"><span><span data-i18n="lightsDim">Dim</span> <small data-i18n="dimCost">2 units · +2 growth</small></span></label>
@@ -143,6 +163,10 @@
             <label class="toggle"><input id="shelter" type="checkbox"><span data-i18n="costOne">1 unit</span></label>
           </div>
         </div>
+        <div class="system" id="analysis-system" hidden>
+          <label for="analysis"><b data-i18n="analysis">Analyze a sample</b><small id="analysis-help"></small></label>
+          <label class="toggle"><input id="analysis" type="checkbox" disabled><span data-i18n="costThree">3 units</span></label>
+        </div>
         <p id="plan-feedback" class="plan-feedback" aria-live="polite"></p>
         <div class="action-row">
           <button class="primary" type="button" id="execute"><span data-i18n="execute">Run this turn</span> <span aria-hidden="true">→</span></button>
@@ -150,29 +174,14 @@
         </div>
       </section>
 
-      <aside class="briefing" aria-label="Mission briefing and log" data-i18n-aria-label="brief">
-        <section class="panel briefing-card">
-          <div class="section-title">
-            <p class="eyebrow" data-i18n="control">MISSION CONTROL</p><span class="signal" id="signal"></span>
-          </div>
-          <h2 id="event-title"></h2>
-          <p id="event-brief"></p>
-          <div class="forecast" id="forecast"></div>
-        </section>
-        <section class="panel briefing-card">
-          <p class="eyebrow" data-i18n="log">FLIGHT LOG</p>
-          <h2 id="log-heading"></h2>
-          <div id="log" aria-live="polite"></div>
-          <button class="secondary" type="button" id="rewind" hidden><span data-i18n="rewind">↶ Replay last turn</span></button>
-        </section>
-      </aside>
     </div>
-
     <section class="panel result" id="result" hidden aria-labelledby="result-title">
       <p class="eyebrow" data-i18n="debrief">MISSION DEBRIEF</p>
       <h2 id="result-title" tabindex="-1"></h2>
       <p id="result-explanation"></p>
       <div id="decision"></div>
+      <div id="science-report"></div>
+      <select id="review-turn" hidden></select>
       <div class="action-row">
         <button class="primary" type="button" id="replay-key"><span data-i18n="replay">↶ Replay a decision</span></button>
         <button class="secondary" type="button" id="play-again"><span data-i18n="newMission">New mission</span></button>
@@ -182,6 +191,9 @@
         <p data-i18n="reflectionAnswer">Grow lights and life support share the same power supply. Dimming the lights can preserve battery charge for the crew, but keeping them off for too long can delay the harvest until the food supply runs out.</p>
       </details>
     </section>
+
+      </div>
+    </div>
 
     <footer>
       <span data-i18n="project">Independent NASA Space Apps Challenge 2026 project</span>
@@ -247,9 +259,15 @@
       <figcaption>NASA/JPL-Caltech/New Mexico Museum of Natural History</figcaption>
     </figure>
     <h3 data-i18n="dustHeading">2018 · Opportunity dust storm</h3>
-    <p><span data-i18n="dustBody">Opportunity had 21 Wh available on sol 5111. Five approximate readings of the descending energy curve plus the published endpoint set the six solar budgets (10, 10, 7, 6, 2, 1). The turns sample different sols and compress time.</span> <a target="_blank" rel="noopener" href="https://science.nasa.gov/resource/on-mars-light-is-energy/" data-i18n="chartLink">Original NASA chart ↗</a></p>
+    <p><span data-i18n="dustBody">Opportunity had 21 Wh available on sol 5111. Six points derived from the chart anchor the tightening of the power budget. Intermediate and recovery turns are modeled. Sol labels indicate selected dates in the scenario, and turns compress time.</span> <a target="_blank" rel="noopener" href="https://science.nasa.gov/resource/on-mars-light-is-energy/" data-i18n="chartLink">Original NASA chart ↗</a></p>
     <h3 data-i18n="solarHeading">2024 · Curiosity watches a solar storm</h3>
     <p><span data-i18n="solarBody">NASA reported a dose of 8,100 μGy for the May 20 event at Curiosity's location. This observation inspires the final shelter decision. The game assigns 1 or 5 exposure points for teaching purposes.</span> <a target="_blank" rel="noopener" href="https://www.nasa.gov/solar-system/planets/mars/nasa-watches-mars-light-up-during-epic-solar-storm/" data-i18n="radLink">Curiosity RAD event ↗</a></p>
+    <h3 data-i18n="defenseSources">Technical sources for the simulation</h3>
+    <ul class="technical-sources">
+      <li><a href="https://ntrs.nasa.gov/citations/20230015763" target="_blank" rel="noopener" data-i18n="paperPower">NASA NTRS · Mars Surface Power Generation</a><span data-i18n="paperPowerUse"> — dust opacity explains the drop in available solar energy.</span></li>
+      <li><a href="https://ntrs.nasa.gov/citations/20160004060" target="_blank" rel="noopener" data-i18n="paperVeggie">NASA NTRS · Veggie technical paper</a><span data-i18n="paperVeggieUse"> — light, water and delayed growth. The ISS lettuce experiment took 33 days.</span></li>
+      <li><a href="https://ntrs.nasa.gov/citations/20220011452" target="_blank" rel="noopener" data-i18n="paperSampling">NASA NTRS · Perseverance presentation</a><span data-i18n="paperSamplingUse"> — samples are collected from different targets with context. The lab and its results in this mission are fictional.</span></li>
+    </ul>
     <h3 data-i18n="systems">How the systems work</h3>
     <ul>
       <li><span data-i18n="eclssIntro">Air cleaning and water recycling are based on functions of NASA's</span> <a target="_blank" rel="noopener" href="https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/">ECLSS ↗</a>.</li>

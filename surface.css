@@ -153,3 +153,89 @@
 @media (prefers-reduced-motion: reduce) {
   .field-player[data-walking] .field-model, .field-player[data-walking] .field-model * { animation: none; }
 }
+
+:root {
+  --bg: #111510;
+  --panel: #1b2018;
+  --line: #3a4332;
+  --ink: #eeeadd;
+  --subtle: #b6bcab;
+  --accent: #dfc195;
+  --mint: #bccf9a;
+}
+.topbar, .layout { width: min(1440px, calc(100% - 48px)); max-width: none; }
+.topbar { padding-inline: 0; min-height: 58px; }
+.mission-heading { display: grid; grid-template-columns: minmax(0,1fr) minmax(260px, 39%); align-items: center; gap: 20px; padding-block: 16px; border-block: 1px solid var(--line); }
+.mission-heading h1 { font-size: clamp(2.1rem,4vw,4rem); line-height: 1.02; letter-spacing: -.065em; margin: 0; }
+.sequence { grid-template-columns: repeat(3,minmax(0,1fr)); border: 1px solid var(--line); border-radius: 5px; background: #191e16; }
+.seq-step { padding: 8px 10px; }
+.seq-step[aria-current="step"] { background: #282f22; }
+.mission-grid { display: grid; grid-template-columns: minmax(0,2.3fr) minmax(300px,1fr); gap: 16px; margin-top: 16px; }
+.scene-column, .console-column { min-width: 0; }
+.commander { margin: 0 0 12px; background: #1a2018; padding: 8px 14px; border-radius: 7px; }
+.commander .astronaut { width: 43px; }
+.surface { margin: 0; border-radius: 9px; padding: 12px; }
+.surface .section-title { padding-inline: 2px; }
+.surface h2 { font-size: 1.25rem; }
+.terrain { height: auto; aspect-ratio: 3/2; box-shadow: none; border: 1px solid #777252; border-radius: 5px; background: #77533f; }
+.terrain[data-weather] { background-image: none; }
+.surface-art { position: absolute; inset: 0; background: url("assets/outpost.jpg") center / 100% 100%; pointer-events: none; }
+.surface-vignette { background: linear-gradient(0deg,#17170f5e,transparent 25%),linear-gradient(180deg,#15180d4d,transparent 27%); transition: background .3s; }
+.terrain[data-weather="DUST"] .surface-vignette { background: linear-gradient(117deg,#743b27ad,#c9895144 50%,#56302574); }
+.terrain[data-weather="ALERT"] .surface-vignette,.terrain[data-weather="STORM"] .surface-vignette { background: linear-gradient(117deg,#6f3023cb,#be78585c 50%,#592f267f); }
+.terrain[data-weather="DUST"]::after,.terrain[data-weather="ALERT"]::after,.terrain[data-weather="STORM"]::after { content: ""; inset: 0 -40%; z-index: 2; opacity: .46; background: repeating-linear-gradient(157deg,transparent 0 30px,#ffd1a04a 31px 32px,transparent 33px 51px); animation: dust-drift 5s linear infinite; pointer-events: none; }
+@keyframes dust-drift { to { transform: translateX(21%); } }
+.terrain .station { transform: translate(-50%, 0); gap: 2px; filter: none; padding: 0; border: 0; background: none; }
+.terrain .station i, .terrain .station[data-near] i {
+  width: 9px; height: 9px; border: 1px solid #eee2af; border-radius: 0;
+  background: #d7c58b; outline: none; transform: rotate(45deg);
+  box-shadow: 0 0 9px #f1c376aa;
+}
+.terrain .station i::before,.terrain .station i::after { display: none; }
+.terrain .station[data-near="true"] i { background: #e2f5ad; box-shadow: 0 0 11px #dcec9c; }
+.terrain .station span { background: #192019ed; border: 1px solid #777a58; border-radius: 3px; padding: 3px 7px; font: 660 clamp(.57rem,1vw,.76rem)/1.18 system-ui; text-wrap: balance; }
+.terrain .sample-site i { border-color: #a0d2cf; background: #92caca; }
+.terrain .sample-site[data-collected="true"] i { background: #405653; box-shadow: none; }
+.field-player { transform: translate(-50%,-88%); }
+.field-player .field-model { width: clamp(35px,5.45vw,76px); }
+.field-model .helmet { border-width: 2px; }
+.field-player > span { background: #172018ef; }
+.field-tools { min-height: 59px; }
+.surface #surface-instructions { margin: 9px 0 0; color: #aeb4a0; font-size: .76rem; }
+.scene-column .briefing { margin-top: 12px; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.console-column .telemetry { margin: 0 0 12px; }
+.console-column .reserves { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.console-column .panel { padding: 14px; border-radius: 8px; }
+.console-column .command-grid { display: block; }
+.console-column .grow { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.console-column .choices { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.console-column .choices label > span { white-space: normal; padding-inline: 3px; }
+.console-column .reserve { background: #141913; border-color: #363d31; }
+.console-column .primary { flex: 1; }
+.objectives { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
+.objectives ul { list-style: none; padding: 0; margin: 0; font-size: .8rem; color: var(--subtle); }
+.objectives li { margin: 3px 0; }
+.objectives li[data-complete="true"] { color: var(--mint); }
+#science-report p { margin: 4px 0; }
+#science-report { padding-bottom: 12px; }
+@media (max-width: 850px) {
+  .topbar,.layout { width: calc(100% - 28px); }
+  .mission-grid { grid-template-columns: minmax(0,1fr); }
+  .scene-column .briefing { display: grid; }
+  .console-column .reserves { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 510px) {
+  .mission-heading { grid-template-columns: 1fr; gap: 10px; }
+  .scene-column .briefing { grid-template-columns: 1fr; }
+  .briefing-card + .briefing-card { margin: 0; }
+  .surface { padding: 8px; }
+  .terrain .station span { font-size: .53rem; padding: 2px 3px; }
+  .field-player .field-model { width: 37px; }
+  .surface-hud { font-size: .53rem; padding: 3px 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terrain[data-weather]::after { animation: none; }
+}
+.provenance { color: var(--mint); font: .67rem var(--mono); margin: -5px 0 8px; }
+#review-turn { max-width: 100%; margin: 4px 0 10px; padding: 6px; background: #171e15; border: 1px solid #687253; border-radius: 4px; color: var(--ink); }
+#chapter-brief { color: var(--ink); border-left: 2px solid var(--mint); padding-left: 8px; }
