@@ -18,7 +18,7 @@ The portable ZIP puts the full website at the top level. Extract it and upload t
 
 ## Mission
 
-The 18-turn campaign covers preparation, storm response and recovery. Complete it with the crew safe, at least two harvests and two analyzed samples. Each turn is a planning step at a selected scenario sol. Hovering is unnecessary: the console labels chart anchors and modeled values alike.
+The 18-turn campaign covers preparation, storm response and recovery. Follow the highlighted next step on the map. Enter the greenhouse, habitat or shelter to set up equipment, then apply the plan after checking the resource projection. The turn log records the result. Complete it with the crew safe, at least two harvests and two analyzed samples. Each turn is a planning step at a selected scenario sol. Hovering is unnecessary: the console labels chart anchors and modeled values alike.
 
 1. Collect samples at the rock outcrop and the regolith site. In Habitat, queue an analysis, then execute the turn. Each analysis costs 3 energy and occupies one turn; the lab does not replace air or water systems.
 2. Prepare for the storms with harvests and stored energy. Set the lights and check the next turn’s solar forecast. Use the reserve battery or temporarily rely on stored air or water if the budget tightens.
@@ -40,4 +40,4 @@ The 18-turn campaign covers preparation, storm response and recovery. Complete i
 - [NASA, Veggie Fact Sheet](https://www.nasa.gov/wp-content/uploads/2023/03/veggie-fact-sheet-508.pdf). LED lighting, watering and crop growth.
 - [NASA, Design for Ionizing Radiation Protection](https://www.nasa.gov/wp-content/uploads/2023/03/radiation-protection-technical-brief-ochmo.pdf). Storm shelter and shielding concepts.
 - [NASA Science, NASA’s Perseverance Captures Panorama at “Arbot”](https://science.nasa.gov/photojournal/nasas-perseverance-captures-panorama-at-arbot/). Cropped in `dist/assets/mars.jpg`, credited to NASA/JPL-Caltech/ASU/MSSS.
-- The outpost scene in `assets/outpost.jpg` is a generated illustration created with ImageGen. OpenAI ChatGPT/Codex assisted with concept development, research synthesis, code, UI, and localization.
+- The outpost and room illustrations in `assets/outpost.jpg` and `assets/interiors.jpg` were created with ImageGen. OpenAI ChatGPT/Codex assisted with concept development, research synthesis, code, UI, and localization.

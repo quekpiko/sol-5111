@@ -70,36 +70,30 @@ function updatePlan() {
   byId("budget-detail").textContent = copy.budget(phases[turn].solar, state.battery, limits.battery) +
     (plan.spare ? copy.cellBudget(state.spare) : "");
   const feedback = byId("plan-feedback");
+  window.dispatchEvent(new CustomEvent("mission-plan", { detail: estimate }));
   feedback.dataset.warning = String(!estimate.valid || Boolean(estimate.failure));
   if (!estimate.valid) {
     feedback.textContent = copy.overBudget(estimate.draw - estimate.available);
     return;
   }
-  feedback.textContent = copy.plan(estimate.draw, estimate.after.battery) +
+  feedback.textContent = copy.turnPreview(estimate.draw, estimate.after.battery,
+    estimate.after.food, estimate.after.crop, estimate.after.air, estimate.after.water) +
     (estimate.failure ? ` · ${copy.warning}: ${copy.warnings[estimate.failure]}` : "");
 }
 
-function renderTurn(plan = defaults(phases[turn])) {
+function renderTurn(plan = defaults()) {
   const phase = phases[turn];
   const next = phases[turn + 1];
+  byId("forecast").textContent = next ? copy.next + " · " + copy.forecast(next.solar, next.status === "STORM") : "";
   byId("sol-label").textContent = copy.turnInfo(turn + 1, phases.length, phase.sol);
   const chapter = Math.floor(turn / 6);
   byId("sequence").innerHTML = copy.campaign.map((title, index) => `
     <div class="seq-step" ${index === chapter ? 'aria-current="step"' : ""}>
       <b>0${index + 1}</b><strong>${title}</strong>
     </div>`).join("");
-  byId("signal").textContent = copy.statuses[phase.status];
-  byId("signal").dataset.status = phase.status;
-  const briefing = copy.phases.find(([status]) => status === phase.status);
-  byId("event-title").textContent = briefing[1];
-  byId("event-brief").textContent = briefing[2];
-  byId("chapter-brief").textContent = copy.chapterBrief[chapter];
   byId("budget-source").textContent = historicalSols.includes(phase.sol) ? copy.observed : copy.modeled;
   byId("shelter-help").textContent = phase.status === "STORM"
     ? copy.shelter : copy.standby;
-  byId("forecast").innerHTML = next
-    ? `${copy.next} <b>${copy.forecast(next.solar, next.status === "STORM")}</b>`
-    : "";
   byId("mission-jump").href = "#controls";
   byId("result").hidden = true;
   byId("command").hidden = false;
@@ -134,7 +128,7 @@ function renderLog(entry) {
       : `<p>${copy.firstTurn}</p>`;
     return;
   }
-  byId("log-heading").textContent = copy.sol(phases[entry.turn].sol);
+  byId("log-heading").textContent = `${copy.lastTurn} · ${copy.sol(phases[entry.turn].sol)}`;
   const result = entry.result;
   const items = [
     copy.batteryLog(result.after.battery, limits.battery, result.draw),
@@ -223,9 +217,10 @@ function execute() {
   }
   turn += 1;
   turnStart = state;
-  renderTurn({ ...plan, analysis: false, shelter: phases[turn].status === "STORM" });
+  renderTurn({ ...plan, analysis: false, shelter: false });
   window.dispatchEvent(new Event("mission-state"));
   renderLog(entry);
+  byId("turn-record").open = true;
 }
 
 function replay(entry) {
@@ -238,6 +233,7 @@ function replay(entry) {
   done = false;
   renderTurn(entry.plan);
   renderLog(null);
+  byId("turn-record").open = Boolean(comparison);
   window.dispatchEvent(new Event("mission-state"));
   byId("control-heading").focus();
 }
@@ -251,6 +247,7 @@ function reset() {
   done = false;
   renderTurn();
   renderLog(null);
+  byId("turn-record").open = Boolean(comparison);
   window.dispatchEvent(new Event("mission-state"));
   byId("control-heading").focus({ preventScroll: true });
 }

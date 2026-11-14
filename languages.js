@@ -1,6 +1,11 @@
 "use strict";
 
 const staticText = {
+  nextStep: ["NEXT STEP", "ЩО РОБИТИ ДАЛІ"],
+  exitRoom: ["Exit to map", "Вийти на карту"],
+  manualPlan: ["Adjust all systems", "Налаштувати всі системи"],
+  lastTurnSummary: ["Last turn", "Минулий хід"],
+  turnLoop: ["Choose what to power. Apply the plan to advance time and see its effects.", "Вибери, що живити. Застосуй план, щоб перейти до наступного ходу й побачити наслідки."],
   stationRidge: ["Rock outcrop", "Скельний вихід"],
   stationBasin: ["Regolith site", "Ділянка реголіту"],
   objectiveTitle: ["MISSION OBJECTIVES", "ЦІЛІ МІСІЇ"],
@@ -68,8 +73,8 @@ const staticText = {
     "Ігрові одиниці"
   ],
   "allocate": [
-    "Allocate power",
-    "Розподіли енергію"
+    "Plan this turn",
+    "План поточного ходу"
   ],
   "available": [
     "energy available",
@@ -140,8 +145,8 @@ const staticText = {
     "1 од."
   ],
   "execute": [
-    "Run this turn",
-    "Виконати хід"
+    "Apply plan & advance",
+    "Застосувати план і продовжити"
   ],
   "restart": [
     "Restart",
@@ -295,6 +300,41 @@ const staticText = {
 
 const languages = {
   en: {
+    guide: {
+      first: ["Start the greenhouse", "A dust storm is coming. Your mission is to keep the crew alive for 18 turns, grow two harvests and analyze two samples. Start by turning on the grow lights."],
+      prepare: ["Apply your first plan", "The lights are scheduled. Check the projected resources and apply the plan to grow the crop."],
+      ridge: ["Collect a rock sample", "Go to the rock outcrop. Select its marker, then collect the sample when you arrive."],
+      basin: ["Collect a regolith sample", "The loose soil gives you a second observation to compare with the rock."],
+      lab: ["Analyze a sample in the habitat", "The analyzer uses 3 energy for one turn. Queue an analysis and check the forecast before applying the plan."],
+      storage: ["Pick up the spare battery", "The warehouse holds five energy units for the darkest turns."],
+      solar: ["Connect the spare battery", "Carry it to the solar array. Once connected, you can draw from it when the main supply runs short."],
+      shelter: ["Take the crew into the shelter", "A solar particle storm is here. Enter the shelter and turn on ventilation before applying the plan."],
+      safe: ["Apply the plan and ride out the storm", "The crew is in the shelter. Keep enough power for the air and water systems."],
+      grow: ["Light the greenhouse", "The crew is drawing down stored food. Light the crop and check the food projection before applying the plan."],
+      budget: ["Adjust the energy budget", "The planned systems need more energy than you have. Reduce greenhouse lighting, delay an analysis or draw from the connected spare battery."],
+      danger: ["Protect the crew before advancing", "The projected plan runs out of a vital resource. Review the warning and change the plan."],
+      proceed: ["Apply the plan", "Read the resource projection. The next turn may have a different solar budget."],
+      complete: ["Read the mission debrief", "Review the crew’s outcome and what the sample analysis can tell you."]
+    },
+    go: "Walk there",
+    enter: "Enter module",
+    transit: "Walking…",
+    reviewPlan: "Review plan",
+    viewDebrief: "Read debrief",
+    roomDescriptions: {
+      greenhouse: "The LEDs and water support crop growth. Choose a light setting for the upcoming turn.",
+      habitat: "Clean the cabin air, recycle water or schedule a sample analysis before advancing the turn.",
+      shelter: "Shielding comes from the structure. Sheltering the crew uses one energy unit to run ventilation during the radiation storm."
+    },
+    lightOptions: ["Off · 0 energy", "Dim · 2 energy", "Full · 4 energy"],
+    airControl: "Air scrubber",
+    waterControl: "Water recycler",
+    inShelter: "Crew is in shelter",
+    sampleQueued: "Analysis queued",
+    analysisInfo: (name) => `Next sample · ${name}`,
+    roomPlanSaved: "This setting takes effect when you apply the plan.",
+    turnPreview: (cost, battery, food, crop, air, water) =>
+      `If applied · Uses ${cost} energy · Battery ${battery} · Food ${food} · Crop ${crop}/8 · Air ${air} · Water ${water}`,
     title: "Sol 5111 — Mars Mission Trainer",
     cellBudget: (units) => ` + ${units} from the spare battery`,
     cellLabel: (units) => `Draw from spare battery (${units} units left)`,
@@ -405,6 +445,41 @@ const languages = {
     outcome: "Outcome of that turn"
   },
   uk: {
+    guide: {
+      first: ["Запусти теплицю", "Наближається пилова буря. Твоя мета — зберегти екіпаж протягом 18 ходів, зібрати два врожаї та проаналізувати два зразки. Почни з освітлення теплиці."],
+      prepare: ["Застосуй перший план", "Освітлення заплановано. Перевір прогноз запасів і застосуй план, щоб рослини почали рости."],
+      ridge: ["Відбери зразок породи", "Натисни позначку скельного виходу на карті. Коли астронавт підійде, відбери зразок."],
+      basin: ["Відбери зразок реголіту", "Порівняй цей пухкий ґрунт зі зразком породи після аналізу."],
+      lab: ["Проаналізуй зразок у житловому модулі", "Аналізатор витрачає 3 одиниці енергії за один хід. Заплануй аналіз і перевір прогноз перед виконанням плану."],
+      storage: ["Забери запасну батарею", "На складі є п’ять одиниць енергії на випадок, коли панелі даватимуть найменше."],
+      solar: ["Під’єднай запасну батарею", "Віднеси її до сонячних панелей. Під’єднаний запас можна використати, коли основної енергії бракує."],
+      shelter: ["Переведи екіпаж в укриття", "Почалася буря сонячних частинок. Зайди в укриття й увімкни вентиляцію, перш ніж застосувати план."],
+      safe: ["Застосуй план, щоб пережити бурю", "Екіпаж в укритті. Залиш достатньо енергії на очищення повітря й переробку води."],
+      grow: ["Увімкни освітлення теплиці", "Екіпаж витрачає запаси їжі. Увімкни світло й перевір прогноз запасів перед застосуванням плану."],
+      budget: ["Скоригуй витрати енергії", "На заплановані системи бракує енергії. Приглуши світло, відклади аналіз або використай під’єднану запасну батарею."],
+      danger: ["Убезпеч екіпаж перед наступним ходом", "За прогнозом вичерпається життєво важливий ресурс. Перевір попередження й зміни план."],
+      proceed: ["Застосуй план", "Перевір прогноз запасів. На наступному ході виробіток сонячних панелей може змінитися."],
+      complete: ["Переглянь підсумки місії", "Дізнайся, що сталося з екіпажем і які висновки можна зробити зі зразків."]
+    },
+    go: "Іти до цілі",
+    enter: "Увійти до модуля",
+    transit: "Астронавт іде…",
+    reviewPlan: "Перевірити план",
+    viewDebrief: "Переглянути підсумки",
+    roomDescriptions: {
+      greenhouse: "Світло й вода допомагають рослинам рости. Вибери освітлення на наступний хід.",
+      habitat: "Тут можна очистити повітря, переробити воду або запланувати аналіз зразка.",
+      shelter: "Екіпаж захищає конструкція укриття. Під час бурі одна одиниця енергії потрібна для вентиляції."
+    },
+    lightOptions: ["Вимкнено · 0 енергії", "Приглушене · 2 од.", "Повне · 4 од."],
+    airControl: "Очищення повітря",
+    waterControl: "Переробка води",
+    inShelter: "Екіпаж в укритті",
+    sampleQueued: "Аналіз заплановано",
+    analysisInfo: (name) => `Наступний зразок · ${name}`,
+    roomPlanSaved: "Налаштування спрацює, коли застосуєш план.",
+    turnPreview: (cost, battery, food, crop, air, water) =>
+      `Прогноз · Витрати ${cost} · Батарея ${battery} · Їжа ${food} · Ріст ${crop}/8 · Повітря ${air} · Вода ${water}`,
     title: "Sol 5111 — Тренажер марсіанської місії",
     cellBudget: (units) => ` + ${units} від запасної батареї`,
     cellLabel: (units) => `Використати запасну батарею (залишилося ${units} од.)`,

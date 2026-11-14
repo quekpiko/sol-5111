@@ -10,7 +10,11 @@
   const route = byId("field-route");
   const action = byId("field-action");
   const status = byId("field-status");
-  const control = byId("module-control");
+  const guideAction = byId("guide-action");
+  const room = byId("interior");
+  const roomControls = byId("room-controls");
+  const rooms = ["greenhouse", "habitat", "shelter"];
+  const markers = [...map.querySelectorAll("[data-station]")];
   const note = byId("field-note");
   const stations = {
     solar: { x: 30, y: 52, source: "https://science.nasa.gov/resource/on-mars-light-is-energy/" },
@@ -38,6 +42,94 @@
   let near = "";
   let selectedNote = "";
   let lastStatus = "";
+  let activeRoom = "";
+  let currentHint = "";
+
+  function nextStep() {
+    const plan = readPlan();
+    const phase = phases[turn];
+    const estimate = simulate(state, phase, plan);
+    if (done) return ["complete"];
+    if (phase.status === "STORM" && !plan.shelter) return ["shelter", "shelter"];
+    if (!estimate.valid) return ["budget"];
+    if (state.food <= 4 && !plan.grow && !plan.shelter) return ["grow", "greenhouse"];
+    if (estimate.failure) return ["danger"];
+    if (phase.status === "STORM") return ["safe"];
+    if (turn === 0) return plan.grow ? ["prepare"] : ["first", "greenhouse"];
+    if (!state.samples.includes("ridge")) return ["ridge", "ridge"];
+    if (!state.samples.includes("basin")) return ["basin", "basin"];
+    if (pendingSample() && !plan.analysis && estimate.available - estimate.draw >= 3) return ["lab", "habitat"];
+    if (state.pack === "storage") return ["storage", "storage"];
+    if (state.pack === "carried") return ["solar", "solar"];
+    return ["proceed"];
+  }
+
+  function renderGuide() {
+    const [step, target] = nextStep();
+    const key = [language, step, Boolean(destination), near === target].join("/");
+    if (key === currentHint) return;
+    currentHint = key;
+    for (const marker of markers) marker.dataset.target = String(marker.dataset.station === target);
+    const [title, detail] = copy.guide[step];
+    byId("guide-title").textContent = title;
+    byId("guide-detail").textContent = detail;
+    guideAction.disabled = Boolean(destination);
+    guideAction.textContent = destination ? copy.transit : target
+      ? (near === target ? action.textContent : copy.go)
+      : done ? copy.viewDebrief : copy.reviewPlan;
+  }
+
+  function openRoomStation(station) {
+    activeRoom = station;
+    byId("room-view").dataset.room = station;
+    byId("interior-title").textContent = stationName(station);
+    byId("room-brief").textContent = copy.roomDescriptions[station];
+    byId("room-feedback").textContent = "";
+    roomControls.replaceChildren();
+
+    function choice(label, field, value, disabled = false) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary";
+      button.textContent = label;
+      button.disabled = disabled || done;
+      button.dataset.field = field;
+      button.dataset.value = value;
+      button.addEventListener("click", () => {
+        const plan = readPlan();
+        plan[field] = field === "grow" ? value : !plan[field];
+        setPlan(plan);
+        updatePlan();
+        syncRoomChoices();
+        byId("room-feedback").textContent = copy.roomPlanSaved;
+      });
+      roomControls.append(button);
+    }
+
+    if (station === "greenhouse") {
+      copy.lightOptions.forEach((label, index) => choice(label, "grow", index * 2));
+    } else if (station === "habitat") {
+      choice(copy.airControl, "air", true);
+      choice(copy.waterControl, "water", true);
+      if (pendingSample()) {
+        const sample = document.createElement("p");
+        sample.textContent = copy.analysisInfo(sampleName(pendingSample()));
+        roomControls.append(sample);
+        choice(copy.openLab, "analysis", true);
+      }
+    } else {
+      choice(copy.inShelter, "shelter", true, phases[turn].status !== "STORM");
+    }
+    syncRoomChoices();
+    room.showModal();
+  }
+
+  function syncRoomChoices() {
+    const plan = readPlan();
+    for (const button of roomControls.querySelectorAll("button")) {
+      button.setAttribute("aria-pressed", String(String(plan[button.dataset.field]) === button.dataset.value));
+    }
+  }
 
   function setPosition(element, { x, y }) {
     element.style.left = `${x}%`;
@@ -67,7 +159,7 @@
         closest = distance;
       }
     }
-    for (const station of map.querySelectorAll("[data-station]")) {
+    for (const station of markers) {
       station.dataset.near = String(station.dataset.station === near);
       station.dataset.collected = String(state.samples.includes(station.dataset.station));
     }
@@ -85,17 +177,15 @@
       lastStatus = text;
     }
     action.disabled = !near || Boolean(destination);
-    const lab = near === "habitat" && pendingSample();
-    control.hidden = done || Boolean(destination) || !strings.remote[near] ||
-      (near === "shelter" && phases[turn].status !== "STORM");
-    if (!control.hidden) control.textContent = lab ? copy.openLab : strings.remote[near];
     const phase = phases[turn];
     map.dataset.weather = phase.status;
     byId("surface-signal").textContent = copy.statuses[phase.status];
     byId("surface-sol").textContent = copy.sol(phase.sol);
     action.textContent = !done && near === "storage" && state.pack === "storage" ? strings.pick
       : !done && near === "solar" && state.pack === "carried" ? strings.install
-      : !done && phases[turn].status !== "STORM" && stations[near]?.sample && !state.samples.includes(near) ? copy.sampling : strings.interact;
+      : !done && phases[turn].status !== "STORM" && stations[near]?.sample && !state.samples.includes(near) ? copy.sampling
+      : rooms.includes(near) ? copy.enter : strings.interact;
+    renderGuide();
   }
 
   function startFrame() {
@@ -185,6 +275,10 @@
 
   function interact() {
     if (!near || destination) return;
+    if (rooms.includes(near)) {
+      openRoomStation(near);
+      return;
+    }
     if (stations[near].sample) collectSample(near);
     if (near === "storage") handlePack("pick");
     const installed = near === "solar" && handlePack("install");
@@ -199,6 +293,10 @@
 
   map.addEventListener("click", (event) => {
     const station = event.target.closest("[data-station]");
+    if (station && station.dataset.station === near && !destination) {
+      interact();
+      return;
+    }
     const rect = map.getBoundingClientRect();
     walk(station ? stations[station.dataset.station] : {
       x: Math.min(94, Math.max(6, (event.clientX - rect.left) * 100 / rect.width)),
@@ -211,6 +309,7 @@
   });
   map.addEventListener("keydown", (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.target !== map && event.key === "Enter") return;
     if (event.code === "KeyE" || event.key === "Enter") {
       event.preventDefault();
       if (!event.repeat) interact();
@@ -237,31 +336,26 @@
   });
   map.addEventListener("blur", () => heldKeys.clear());
   action.addEventListener("click", interact);
-  control.addEventListener("click", () => {
-    if (control.hidden || destination) return;
-    const plan = readPlan();
-    let setting;
-    if (near === "greenhouse") {
-      plan.grow = (plan.grow + 2) % 6;
-      setting = copy.levels[plan.grow];
-    } else if (near === "habitat" && pendingSample()) {
-      plan.analysis = true;
-      setPlan(plan);
-      updatePlan();
-      status.textContent = copy.labQueued;
-      lastStatus = status.textContent;
-      return;
-    } else if (near === "habitat") {
-      plan.air = !plan.air;
-      setting = plan.air ? copy.on : copy.off;
+  guideAction.addEventListener("click", () => {
+    const [step, target] = nextStep();
+    if (target && near === target) {
+      interact();
+    } else if (target) {
+      walk(stations[target]);
+    } else if (step === "complete") {
+      byId("result-title").focus();
     } else {
-      plan.shelter = true;
-      setting = copy.on;
+      byId("manual-plan").open = step === "budget" || step === "danger";
+      byId("control-heading").focus();
     }
-    setPlan(plan);
-    updatePlan();
-    status.textContent = `${copy.field.settings} · ${stationName(near)} · ${setting}`;
-    lastStatus = status.textContent;
+  });
+  room.addEventListener("close", () => {
+    activeRoom = "";
+    roomControls.replaceChildren();
+  });
+  window.addEventListener("mission-plan", () => {
+    if (activeRoom) syncRoomChoices();
+    updateMap();
   });
   byId("language").addEventListener("change", () => {
     updateMap();

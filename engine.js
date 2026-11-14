@@ -15,7 +15,7 @@ const Mission = (() => {
     battery: 8, air: 6, water: 6, food: 9, crop: 3, radiation: 0,
     harvests: 0, spare: 0, pack: "storage", samples: [], analyzed: []
   });
-  const defaults = (phase) => ({ air: true, water: true, grow: 0, shelter: phase.status === "STORM" });
+  const defaults = () => ({ air: true, water: true, grow: 0, shelter: false });
   const limits = { battery: 20, air: 8, water: 10, food: 14, crop: 8, radiation: 4 };
 
   function isSuccess(state) {

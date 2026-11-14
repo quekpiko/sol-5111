@@ -239,3 +239,63 @@
 .provenance { color: var(--mint); font: .67rem var(--mono); margin: -5px 0 8px; }
 #review-turn { max-width: 100%; margin: 4px 0 10px; padding: 6px; background: #171e15; border: 1px solid #687253; border-radius: 4px; color: var(--ink); }
 #chapter-brief { color: var(--ink); border-left: 2px solid var(--mint); padding-left: 8px; }
+
+.mission-guide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin: 0 0 10px;
+  background: #242c20;
+  border: 1px solid #66714e;
+  border-left: 3px solid #c4d394;
+  border-radius: 4px;
+}
+.mission-guide h3 { margin: 0 0 3px; font-size: 1.02rem; }
+.mission-guide #guide-detail { margin: 0; font-size: .85rem; color: var(--subtle); }
+.terrain .station[data-target="true"] i {
+  outline: 2px solid #fff3b7;
+  outline-offset: 3px;
+  box-shadow: 0 0 15px 4px #e8ca68;
+}
+.terrain .station[data-target="true"] span {
+  border-color: #f3df91;
+  color: #fff5c6;
+}
+.turn-loop { font-size: .86rem; color: var(--subtle); margin: 3px 0 10px; }
+.manual-plan, .turn-record {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: .88rem;
+}
+.turn-record { margin-top: 10px; }
+.turn-record #log { margin-top: 8px; }
+.manual-plan summary, .turn-record summary, .objectives summary {
+  color: var(--mint);
+  cursor: pointer;
+  font-weight: 650;
+}
+.objectives ul { margin-top: 7px; }
+#interior { width: min(570px, calc(100% - 26px)); }
+#interior .drawer-head { margin-bottom: 10px; align-items: center; }
+#interior .drawer-head h2 { margin: 0; }
+.room-view {
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  margin: 0 auto 12px;
+  border: 1px solid #596049;
+  border-radius: 6px;
+  background: #2b3225 url("assets/interiors.jpg") left center / 300% 100% no-repeat;
+}
+.room-view[data-room="habitat"] { background-position-x: center; }
+.room-view[data-room="shelter"] { background-position-x: right; }
+.room-controls p { flex: 0 0 100%; margin: 6px 0 0; }
+.room-controls button[aria-pressed="true"] { background: #455334; border-color: #d1dfa8; }
+#interior #room-feedback { color: var(--mint); margin: 10px 0 0; }
+#interior #room-feedback:empty { margin: 0; }
+@media (max-width: 530px) {
+  .mission-guide { grid-template-columns: minmax(0,1fr); }
+  .mission-guide button { justify-self: start; }
+  .room-view { width: min(100%, 47vh); }
+}
