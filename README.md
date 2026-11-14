@@ -6,9 +6,7 @@ Open `dist/index.html` directly in a desktop browser to play offline. To host th
 
 ## Explore the outpost
 
-Customize the commander’s call sign, helmet, suit color and patch. The game saves the appearance in browser storage when available. Hold WASD or the arrow keys when the map is focused for continuous movement. Click or tap the terrain to walk to that point, or use the module selector. The visible astronaut turns and animates while walking. Inspect each module for a short explanation of the real system or NASA observation behind it.
-
-Use the field controls to adjust the greenhouse lights, switch the air scrubber, or send the crew to shelter during the solar particle event. To connect the spare battery, collect it at Storage and carry it to the Solar array. Select it in the mission controls. It contributes only the energy the primary supply cannot cover, up to five units over the whole mission. Replaying a turn restores the battery and its location to their state at the start of that turn.
+Choose Start mission. Click a location to walk there and open its controls, or move with WASD and press E nearby. Press Space or use the pause button to freeze time while planning. Opening NASA data or the astronaut editor pauses the clock. The simulation pauses when the tab becomes hidden.
 
 ## Publish with GitHub Pages
 
@@ -16,18 +14,9 @@ The portable ZIP puts the full website at the top level. Extract it and upload t
 
 [GitHub Pages setup](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
 
-## Mission
-
-The 18-turn campaign covers preparation, storm response and recovery. Follow the highlighted next step on the map. Enter the greenhouse, habitat or shelter to set up equipment, then apply the plan after checking the resource projection. The turn log records the result. Complete it with the crew safe, at least two harvests and two analyzed samples. Each turn is a planning step at a selected scenario sol. Hovering is unnecessary: the console labels chart anchors and modeled values alike.
-
-1. Collect samples at the rock outcrop and the regolith site. In Habitat, queue an analysis, then execute the turn. Each analysis costs 3 energy and occupies one turn; the lab does not replace air or water systems.
-2. Prepare for the storms with harvests and stored energy. Set the lights and check the next turn’s solar forecast. Use the reserve battery or temporarily rely on stored air or water if the budget tightens.
-3. Shelter during the particle storm. When solar generation recovers, finish the second analysis. The debrief shows simulated observations and asks which geological claim needs more evidence.
-4. Choose any completed turn from the debrief to replay it from its original starting reserves, sample inventory and battery status.
-
 ## Scientific basis
 
-- **Measured:** NASA reports Opportunity had 21 Wh available on sol 5111 during the 2018 dust storm. The energy capacities shown in the game are normalized: six chart anchors contribute budgets of 10, 10, 7, 6, 2 and 1. Intervening turns and the post-storm recovery are illustrative estimates, not recovered Opportunity telemetry. See NASA's [Mars Surface Power Generation](https://ntrs.nasa.gov/citations/20230015763) and [Opportunity chart](https://science.nasa.gov/resource/on-mars-light-is-energy/).
+- **Measured:** NASA reports Opportunity had 21 Wh available on sol 5111 during the 2018 dust storm. The energy capacities shown in the game are normalized: six chart anchors contribute budgets of 10, 10, 7, 6, 2 and 1. Intermediate values and the post-storm recovery are illustrative estimates, not recovered Opportunity telemetry. See NASA's [Mars Surface Power Generation](https://ntrs.nasa.gov/citations/20230015763) and [Opportunity chart](https://science.nasa.gov/resource/on-mars-light-is-energy/).
 - **Demonstrated:** NASA's [Veggie technical report](https://ntrs.nasa.gov/citations/20160004060) documents LED lighting, watering and 33 days of growth for an ISS lettuce crop. The simulator compresses growth and uses greenhouse harvests as supplements to stored crew food. The air and water system costs are pedagogical.
 - **Measured and adapted:** NASA's [Curiosity RAD observation](https://www.nasa.gov/solar-system/planets/mars/nasa-watches-mars-light-up-during-epic-solar-storm/) describes a separate 2024 event. Simulated exposure points are not absorbed dose or crew limits. The shelter uses physical shielding, and its energy demand represents ventilation.
 - **Field practice:** NASA’s [Perseverance presentation](https://ntrs.nasa.gov/citations/20220011452) and [sample catalog](https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/) anchor the sample collection workflow. The two outpost sites, lab budget and observations are fictional. The scientific exercise distinguishes a direct observation from an inference that requires additional evidence.
@@ -41,3 +30,7 @@ The 18-turn campaign covers preparation, storm response and recovery. Follow the
 - [NASA, Design for Ionizing Radiation Protection](https://www.nasa.gov/wp-content/uploads/2023/03/radiation-protection-technical-brief-ochmo.pdf). Storm shelter and shielding concepts.
 - [NASA Science, NASA’s Perseverance Captures Panorama at “Arbot”](https://science.nasa.gov/photojournal/nasas-perseverance-captures-panorama-at-arbot/). Cropped in `dist/assets/mars.jpg`, credited to NASA/JPL-Caltech/ASU/MSSS.
 - The outpost and room illustrations in `assets/outpost.jpg` and `assets/interiors.jpg` were created with ImageGen. OpenAI ChatGPT/Codex assisted with concept development, research synthesis, code, UI, and localization.
+
+## Design decision
+
+The live mission runs on a compressed 100-second clock with player-controlled pause. The map and radio prompts guide the route through preparation, dust, a separate solar particle event, and recovery. Module switches affect the simulation immediately. The greenhouse compares time to harvest and battery runtime under constant peak-dust output and current loads. A science pass is optional. The mission objective is to keep the crew safe and harvest at least one crop. Resource rates and the event clock are game parameters. Open NASA data in the game for research sources.

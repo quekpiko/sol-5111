@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A junior astronaut training game. Run a Mars outpost through a dust storm using NASA rover observations." data-i18n-content="description">
-  <meta name="theme-color" content="#15120f">
+  <meta name="description" content="A real-time Mars outpost story inspired by NASA observations." data-i18n-content="description">
+  <meta name="theme-color" content="#161712">
   <title>Sol 5111 — Mars Mission Trainer</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="surface.css">
@@ -15,205 +15,70 @@
   <script src="world.js" defer></script>
 </head>
 <body>
-  <a class="skip" href="#controls" data-i18n="skip">Skip to mission controls</a>
-  <header class="topbar">
-    <a class="wordmark" href="index.html" aria-label="Sol 5111 home" data-i18n-aria-label="brand"><span class="planet" aria-hidden="true"></span><span>SOL <b>5111</b></span></a>
-    <nav aria-label="Project" data-i18n-aria-label="nav">
-      <select class="language" id="language" aria-label="Language" data-i18n-aria-label="language">
-        <option value="en" lang="en">English</option>
-        <option value="uk" lang="uk">Українська</option>
-      </select>
+  <header class="mission-bar">
+    <h1>SOL <span>5111</span></h1>
+    <div class="clock"><span id="phase"></span><strong id="mission-clock">00:00</strong></div>
+    <nav aria-label="Mission">
+      <button class="secondary" id="pause" type="button" disabled></button>
+      <button class="secondary" id="open-sources" type="button" data-i18n="sourceButton">NASA data</button>
+      <label class="sr-only" for="language" data-i18n="language">Language</label>
+      <select class="language" id="language"><option value="en" lang="en">English</option><option value="uk" lang="uk">Українська</option></select>
     </nav>
   </header>
-  <main class="layout">
-    <div class="mission-heading">
-      <div>
-        <p class="eyebrow" data-i18n="trainer">JUNIOR ASTRONAUT MISSION TRAINER</p>
-        <h1 id="mission-name" data-i18n="briefTitle">Mars outpost</h1>
+  <main class="game">
+    <section class="radio" aria-labelledby="radio-title">
+      <div class="radio-copy">
+        <p class="eyebrow" data-i18n="radio">MISSION CONTROL · RADIO</p>
+        <h2 id="radio-title" aria-live="polite"></h2>
+        <p id="radio-message"></p>
       </div>
-      <div class="sequence" id="sequence" aria-label="Mission timeline" data-i18n-aria-label="timeline"></div>
-    </div>
-    <div class="mission-grid">
-      <div class="scene-column">
-    <section class="panel commander" aria-labelledby="commander-title">
-      <div class="commander-profile">
-        <div class="astronaut" id="avatar-card" data-helmet="classic" data-suit="orange" aria-hidden="true">
-          <div class="spacesuit"></div><div class="helmet"><span class="visor"></span></div><b class="patch">★</b>
-        </div>
-        <div class="commander-heading">
-          <p class="eyebrow" data-i18n="commander">MISSION COMMANDER</p>
-          <h2 id="commander-title">Cadet</h2>
-        </div>
-      </div>
-      <button class="secondary" id="edit-avatar" type="button" data-i18n="editAvatar">Customize astronaut</button>
+      <button class="primary" id="guide" type="button"></button>
     </section>
-
-    <section class="panel surface" aria-labelledby="surface-title">
-      <div class="section-title">
-        <div><h2 id="surface-title" data-i18n="surface">Explore the outpost</h2></div>
-        <a class="quiet control-link" id="mission-jump" href="#controls" data-i18n="toControls">Mission controls ↓</a>
-      </div>
-
-      <div class="mission-guide" aria-labelledby="guide-title">
-        <div>
-          <p class="eyebrow" data-i18n="nextStep">NEXT STEP</p>
-          <h3 id="guide-title" aria-live="polite"></h3>
-          <p id="guide-detail"></p>
-        </div>
-        <button class="secondary" id="guide-action" type="button"></button>
-      </div>
-      <div class="terrain" id="terrain" data-weather="NORMAL" tabindex="0" role="region" aria-labelledby="surface-title" aria-describedby="surface-instructions">
+    <section class="viewport" aria-label="Mars outpost">
+      <div class="terrain" id="terrain" tabindex="0" aria-describedby="map-help">
         <div class="surface-art" aria-hidden="true"></div>
-        <div class="surface-vignette" aria-hidden="true"></div>
-        <div id="walk-marker" class="walk-marker" hidden aria-hidden="true"></div>
-        <div class="surface-hud" aria-hidden="true"><span class="hud-dot"></span><b id="surface-signal"></b><span> / </span><span id="surface-sol"></span></div>
-        <button type="button" class="station solar" data-station="solar"><i aria-hidden="true"></i><span data-i18n="stationSolar">Solar array</span></button>
-        <button type="button" class="station greenhouse" data-station="greenhouse"><i aria-hidden="true"></i><span data-i18n="stationGreenhouse">Greenhouse</span></button>
-        <button type="button" class="station habitat" data-station="habitat"><i aria-hidden="true"></i><span data-i18n="stationHabitat">Habitat</span></button>
-        <button type="button" class="station shelter" data-station="shelter"><i aria-hidden="true"></i><span data-i18n="stationShelter">Shelter</span></button>
-        <button type="button" class="station storage" data-station="storage"><i aria-hidden="true"></i><span data-i18n="stationStorage">Storage</span></button>
-        <button type="button" class="station sample-site" data-station="ridge"><i aria-hidden="true"></i><span data-i18n="stationRidge">Rock outcrop</span></button>
-        <button type="button" class="station sample-site" data-station="basin"><i aria-hidden="true"></i><span data-i18n="stationBasin">Regolith site</span></button>
-        <div class="field-cell" id="field-cell" aria-hidden="true">ϟ</div>
-        <div class="field-player" id="field-player" aria-hidden="true">
-          <div class="astronaut field-model" id="avatar-field" data-helmet="classic" data-suit="orange">
-            <span class="backpack"></span>
-            <span class="leg left-leg"></span><span class="leg right-leg"></span>
-            <span class="arm left-arm"></span><span class="arm right-arm"></span>
-            <div class="spacesuit"></div><div class="helmet"><span class="visor"></span></div>
-            <b class="patch"></b>
-          </div>
+        <div class="weather" aria-hidden="true"></div>
+        <div class="player" id="field-player" aria-hidden="true">
+          <div class="astronaut" id="avatar-field"><span class="leg left"></span><span class="leg right"></span><div class="spacesuit"></div><div class="helmet"><span class="visor"></span></div><b class="patch">★</b></div>
           <span id="field-name"></span>
         </div>
-      </div>
-      <div class="field-tools">
-        <div>
-          <p id="field-status" aria-live="polite"></p>
-          <button type="button" class="secondary" id="field-action" disabled></button>
-        </div>
-        <label for="field-route" data-i18n="fieldRoute">Walk to a module</label>
-        <select id="field-route">
-          <option value="" data-i18n="fieldSelect">Choose a module</option>
-          <option value="solar" data-i18n="stationSolar">Solar array</option>
-          <option value="greenhouse" data-i18n="stationGreenhouse">Greenhouse</option>
-          <option value="habitat" data-i18n="stationHabitat">Habitat</option>
-          <option value="shelter" data-i18n="stationShelter">Shelter</option>
-          <option value="storage" data-i18n="stationStorage">Storage</option>
-          <option value="ridge" data-i18n="stationRidge">Rock outcrop</option>
-          <option value="basin" data-i18n="stationBasin">Regolith site</option>
-        </select>
-      </div>
-      <div class="field-note" id="field-note" hidden aria-live="polite"></div>
-      <p id="surface-instructions" data-i18n="surfaceHelp">Walk with WASD, arrow keys or a tap. Press E near a module to interact.</p>
-    </section>
-
-
-      </div>
-      <div class="console-column">
-    <section class="panel telemetry" aria-labelledby="telemetry-heading">
-      <div class="section-title">
-        <div><p class="eyebrow" data-i18n="telemetry">OUTPOST TELEMETRY</p><h2 id="telemetry-heading" data-i18n="reserves">Base reserves</h2></div>
-        <span class="muted text-small" data-i18n="training">Training units</span>
-      </div>
-      <div class="reserves" id="reserves"></div>
-      <details class="objectives"><summary data-i18n="objectiveTitle">MISSION OBJECTIVES</summary><ul id="objectives"></ul></details>
-    </section>
-
-    <div class="command-grid" id="command">
-      <section class="panel controls" id="controls" aria-labelledby="control-heading">
-        <div class="section-title">
-          <div><p class="eyebrow" id="sol-label"></p><h2 id="control-heading" tabindex="-1" data-i18n="allocate">Plan this turn</h2></div>
-          <div class="budget"><strong id="available"></strong><span data-i18n="available">energy available</span></div>
-        </div>
-        <div class="budget-detail" id="budget-detail"></div><p class="provenance" id="budget-source"></p><p class="turn-loop" id="forecast"></p>
-        <label class="reserve-toggle" id="reserve-toggle" hidden>
-          <input type="checkbox" id="use-cell"> <span id="cell-label"></span>
-        </label>
-
-        <p class="turn-loop" data-i18n="turnLoop">Use equipment on the map to set your plan. Apply the plan once to advance time.</p>
-        <details id="manual-plan" class="manual-plan">
-          <summary data-i18n="manualPlan">Adjust all systems</summary>
-        <div id="switches">
-          <div class="system">
-            <label for="air"><b data-i18n="scrubber">Air scrubber</b><small data-i18n="scrubberHelp">Powered: air reserve +1 · Off: −2</small></label>
-            <label class="toggle"><input id="air" type="checkbox" checked><span data-i18n="costThree">3 units</span></label>
+        <div class="map-readout"><span data-i18n="solarOutput">SOLAR</span> <strong id="solar-now"></strong><span data-i18n="energyRate">u/s</span></div>
+        <button type="button" class="station" data-station="solar"><i aria-hidden="true"></i><span data-i18n="stationSolar">Solar array</span></button>
+        <button type="button" class="station" data-station="greenhouse"><i aria-hidden="true"></i><span data-i18n="stationGreenhouse">Greenhouse</span></button>
+        <button type="button" class="station" data-station="habitat"><i aria-hidden="true"></i><span data-i18n="stationHabitat">Habitat</span></button>
+        <button type="button" class="station" data-station="shelter"><i aria-hidden="true"></i><span data-i18n="stationShelter">Shelter</span></button>
+        <button type="button" class="station" data-station="storage"><i aria-hidden="true"></i><span data-i18n="stationStorage">Storage</span></button>
+        <button type="button" class="station" data-station="ridge"><i aria-hidden="true"></i><span data-i18n="stationRidge">Rock outcrop</span></button>
+        <button type="button" class="station" data-station="basin"><i aria-hidden="true"></i><span data-i18n="stationBasin">Regolith site</span></button>
+        <div class="map-controls">
+          <div class="crew">
+            <div class="astronaut" id="avatar-card" aria-hidden="true"><div class="spacesuit"></div><div class="helmet"><span class="visor"></span></div><b class="patch">★</b></div>
+            <strong id="commander-title"></strong>
+            <button class="secondary" id="edit-avatar" type="button" data-i18n="editAvatar">Customize astronaut</button>
           </div>
-          <div class="system">
-            <label for="water"><b data-i18n="recycler">Water recycler</b><small data-i18n="recyclerHelp">Powered: water reserve +2 · Off: −1</small></label>
-            <label class="toggle"><input id="water" type="checkbox" checked><span data-i18n="costTwo">2 units</span></label>
-          </div>
-          <fieldset class="grow system">
-            <legend class="sr-only" data-i18n="greenhouse">Greenhouse lights</legend>
-            <div><b data-i18n="greenhouse">Greenhouse lights</b><small data-i18n="greenhouseHelp">Growing uses 1 water. Harvest at 8 growth.</small></div>
-            <div class="choices">
-              <label><input name="grow" type="radio" value="0" checked><span><span data-i18n="lightsOff">Off</span> <small data-i18n="costZero">0 units</small></span></label>
-              <label><input name="grow" type="radio" value="2"><span><span data-i18n="lightsDim">Dim</span> <small data-i18n="dimCost">2 units · +2 growth</small></span></label>
-              <label><input name="grow" type="radio" value="4"><span><span data-i18n="lightsFull">Full</span> <small data-i18n="fullCost">4 units · +3 growth</small></span></label>
-            </div>
-          </fieldset>
-          <div class="system">
-            <label for="shelter"><b data-i18n="shelter">Radiation shelter</b><small id="shelter-help">Move the crew inside and power ventilation.</small></label>
-            <label class="toggle"><input id="shelter" type="checkbox"><span data-i18n="costOne">1 unit</span></label>
-          </div>
+          <button class="secondary" type="button" id="interact" disabled></button>
         </div>
-        <div class="system" id="analysis-system" hidden>
-          <label for="analysis"><b data-i18n="analysis">Analyze a sample</b><small id="analysis-help"></small></label>
-          <label class="toggle"><input id="analysis" type="checkbox" disabled><span data-i18n="costThree">3 units</span></label>
-        </div>
-        </details>
-        <p id="plan-feedback" class="plan-feedback" aria-live="polite"></p>
-        <div class="action-row">
-          <button class="primary" type="button" id="execute"><span data-i18n="execute">Apply plan &amp; advance</span> <span aria-hidden="true">→</span></button>
-          <button class="secondary" type="button" id="reset"><span data-i18n="restart">Restart</span></button>
-        </div>
-        <details class="turn-record" id="turn-record">
-          <summary id="log-heading" data-i18n="lastTurnSummary">Last turn</summary>
-          <div id="log" aria-live="polite"></div>
-          <button class="secondary" type="button" id="rewind" hidden><span data-i18n="rewind">↶ Replay last turn</span></button>
-        </details>
-      </section>
-
-    </div>
-    <section class="panel result" id="result" hidden aria-labelledby="result-title">
-      <p class="eyebrow" data-i18n="debrief">MISSION DEBRIEF</p>
-      <h2 id="result-title" tabindex="-1"></h2>
-      <p id="result-explanation"></p>
-      <div id="decision"></div>
-      <div id="science-report"></div>
-      <select id="review-turn" hidden></select>
-      <div class="action-row">
-        <button class="primary" type="button" id="replay-key"><span data-i18n="replay">↶ Replay a decision</span></button>
-        <button class="secondary" type="button" id="play-again"><span data-i18n="newMission">New mission</span></button>
       </div>
-      <details class="reflection">
-        <summary data-i18n="reflectionQuestion">Why can switching off a greenhouse help the crew?</summary>
-        <p data-i18n="reflectionAnswer">Grow lights and life support share the same power supply. Dimming the lights can preserve battery charge for the crew, but keeping them off for too long can delay the harvest until the food supply runs out.</p>
-      </details>
+      <div class="hud" id="hud"></div>
     </section>
-
-      </div>
-    </div>
-
-    <footer>
-      <span data-i18n="project">Independent NASA Space Apps Challenge 2026 project</span>
-      <div class="footer-links">
-        <button class="quiet" id="open-sources" type="button"><span data-i18n="sourceButton">NASA data</span> <span aria-hidden="true">↗</span></button>
-        <a href="https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/" data-i18n="challenge">Challenge brief</a>
-      </div>
-    </footer>
+    <p class="map-help" id="map-help" data-i18n="mapHelp">Click a location or move with WASD. Press E at a module. Space pauses the simulation.</p>
   </main>
-
-  <dialog id="interior" aria-labelledby="interior-title">
-    <div class="drawer-head">
-      <h2 id="interior-title"></h2>
+  <dialog id="interior" aria-labelledby="room-title">
+    <div class="drawer-head"><h2 id="room-title"></h2><div class="room-nav">
+      <button class="secondary" id="room-pause" type="button"></button>
       <form method="dialog"><button class="secondary" data-i18n="exitRoom" autofocus>Exit to map</button></form>
-    </div>
+    </div></div>
     <div class="room-view" id="room-view" aria-hidden="true"></div>
-    <p id="room-brief"></p>
-    <div class="room-controls action-row" id="room-controls"></div>
-    <p id="room-feedback" aria-live="polite"></p>
+    <p class="room-detail" id="room-detail"></p>
+    <p class="room-detail" id="room-power" hidden></p>
+    <div class="room-controls" id="room-controls"></div>
+    <p class="room-feedback" id="room-feedback" aria-live="polite"></p>
   </dialog>
-
+  <dialog id="debrief" aria-labelledby="outcome-title">
+    <div class="drawer-head"><h2 id="outcome-title"></h2><form method="dialog"><button class="secondary" data-i18n="exitRoom">Exit to map</button></form></div>
+    <p id="outcome-text"></p><ul id="outcome-stats"></ul>
+    <button class="primary" id="replay" type="button" data-i18n="replayMission">Replay mission</button>
+  </dialog>
   <dialog id="avatar-editor" aria-labelledby="avatar-title">
     <div class="drawer-head">
       <div><p class="eyebrow" data-i18n="commander">MISSION COMMANDER</p><h2 id="avatar-title" data-i18n="editAvatar">Customize astronaut</h2></div>
@@ -283,8 +148,7 @@
       <li><span data-i18n="eclssIntro">Air cleaning and water recycling are based on functions of NASA's</span> <a target="_blank" rel="noopener" href="https://www.nasa.gov/reference/environmental-control-and-life-support-systems-eclss/">ECLSS ↗</a>.</li>
       <li><span data-i18n="veggieIntro">Light, water and a delayed harvest follow the concept of NASA's</span> <a target="_blank" rel="noopener" href="https://www.nasa.gov/wp-content/uploads/2023/03/veggie-fact-sheet-508.pdf" data-i18n="veggieLink">Veggie experiments ↗</a>.</li>
       <li><span data-i18n="shieldIntro">Crew sheltering follows NASA's</span> <a target="_blank" rel="noopener" href="https://www.nasa.gov/wp-content/uploads/2023/03/radiation-protection-technical-brief-ochmo.pdf" data-i18n="shieldLink">radiation protection brief ↗</a>.</li>
-      <li><span data-i18n="panoramaIntro">Outpost backdrop:</span> <a target="_blank" rel="noopener" href="https://science.nasa.gov/photojournal/nasas-perseverance-captures-panorama-at-arbot/" data-i18n="panoramaLink">Perseverance’s Arbot panorama ↗</a><span data-i18n="panoramaCredit">, cropped. Credit NASA/JPL-Caltech/ASU/MSSS.</span></li>
-    </ul>
+      </ul>
   </dialog>
 </body>
 </html>

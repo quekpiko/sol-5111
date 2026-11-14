@@ -1,59 +1,79 @@
 "use strict";
 
 const Mission = (() => {
-  // Historical chart anchors from Opportunity and modeled conditions around them.
-  const phases = [
-    [5094,10,"NORMAL"], [5096,10,"NORMAL"], [5098,10,"NORMAL"], [5100,10,"NORMAL"],
-    [5102,10,"WATCH"], [5103,10,"WATCH"], [5105,7,"DUST"], [5106,6,"DUST"],
-    [5107,5,"DUST"], [5108,2,"ALERT"], [5110,2,"ALERT"], [5111,1,"STORM"],
-    [5114,2,"DUST"], [5119,4,"DUST"], [5124,6,"DUST"], [5131,8,"WATCH"],
-    [5140,9,"NORMAL"], [5150,10,"NORMAL"]
-  ].map(([sol, solar, status]) => ({ sol, solar, status }));
-  const historicalSols = [5098,5103,5105,5106,5108,5111];
-  const sampleSites = ["ridge", "basin"];
-  const initial = Object.freeze({
-    battery: 8, air: 6, water: 6, food: 9, crop: 3, radiation: 0,
-    harvests: 0, spare: 0, pack: "storage", samples: [], analyzed: []
-  });
-  const defaults = () => ({ air: true, water: true, grow: 0, shelter: false });
-  const limits = { battery: 20, air: 8, water: 10, food: 14, crop: 8, radiation: 4 };
+  const duration = 100;
+  const particleStart = 64;
+  const particleEnd = 78;
+  const spareCapacity = 24;
+  // Six normalized Opportunity observations, placed on a compressed scenario clock.
+  const solarAnchors = [[0, 10], [22, 10], [32, 7], [38, 6], [47, 2], [54, 1]];
+  const solarProfile = [...solarAnchors, [67, 1], [78, 3], [91, 8], [duration, 10]];
+  const settings = {
+    lights: { off: { power: 0, growth: 0 }, dim: { power: 2, growth: 1.7 }, full: { power: 5, growth: 3 } },
+    air: 2, water: 1, shelter: 1, lab: 2
+  };
 
-  function isSuccess(state) {
-    return state.harvests >= 2 && state.analyzed.length === sampleSites.length;
+  function solarAt(time) {
+    const index = solarProfile.findIndex(([second]) => second >= time);
+    if (index <= 0) return solarProfile[index === 0 ? 0 : solarProfile.length - 1][1];
+    const [start, low] = solarProfile[index - 1];
+    const [end, high] = solarProfile[index];
+    return low + (high - low) * (time - start) / (end - start);
   }
 
-  function simulate(state, phase, plan) {
-    const primaryEnergy = state.battery + phase.solar;
-    const available = primaryEnergy + (plan.spare ? state.spare : 0);
-    const sample = plan.analysis ? state.samples.find((item) => !state.analyzed.includes(item)) : undefined;
-    const draw = (plan.air ? 3 : 0) + (plan.water ? 2 : 0) + plan.grow + (plan.shelter ? 1 : 0) + (sample ? 3 : 0);
-    if (draw > available) return { valid: false, available, draw };
-
-    const air = Math.min(limits.air, state.air + (plan.air ? 1 : -2));
-    const water = Math.min(limits.water, state.water + (plan.water ? 2 : -1) - (plan.grow ? 1 : 0));
-    const growth = plan.grow === 4 ? 3 : plan.grow === 2 ? 2 : 0;
-    const crop = state.crop + growth;
-    const harvested = crop >= limits.crop && water > 0;
-    const food = Math.min(limits.food, state.food - 1 + (harvested ? 5 : 0));
-    const radiation = state.radiation + (phase.status === "STORM" ? (plan.shelter ? 1 : 5) : 0);
-    const after = {
-      battery: Math.min(limits.battery, Math.max(0, primaryEnergy - draw)),
-      air: Math.max(0, air),
-      water: Math.max(0, water),
-      food: Math.max(0, food),
-      crop: harvested ? 0 : Math.min(limits.crop, crop),
-      radiation,
-      harvests: state.harvests + Number(harvested),
-      spare: state.spare - Math.max(0, draw - primaryEnergy),
-      pack: state.pack,
-      samples: state.samples,
-      analyzed: sample ? [...state.analyzed, sample] : state.analyzed
+  function newState() {
+    return {
+      time: 0, battery: 55, food: 57, air: 80, water: 65, radiation: 0, crop: 0, harvests: 0,
+      lights: "off", airOn: true, waterOn: true, shelter: false,
+      pack: "storage", reserve: 0, samples: [], analyzed: [], lab: null, failure: ""
     };
-    const failure = air <= 0 ? "air" : water <= 0 ? "water" : food <= 0 ? "food" : radiation >= limits.radiation ? "radiation" : "";
-    return { valid: true, available, draw, after, harvested, growth, failure, sample };
   }
 
-  return { phases, initial, defaults, limits, simulate, isSuccess, historicalSols };
+  function forecast(state, lights = state.lights, solar = solarAt(state.time)) {
+    const lamp = settings.lights[lights];
+    const load = 1 + lamp.power + (state.airOn ? settings.air : 0) +
+      (state.waterOn ? settings.water : 0) + (state.shelter ? settings.shelter : 0) + (state.lab ? settings.lab : 0);
+    return {
+      solar, load, net: solar - load,
+      batterySeconds: load > solar ? (state.battery + state.reserve) / (load - solar) : Infinity,
+      harvestSeconds: lamp.growth > 0 ? (100 - state.crop) / lamp.growth : Infinity
+    };
+  }
+
+  function advance(state, elapsed) {
+    if (state.failure || state.time >= duration || elapsed <= 0) return;
+    const seconds = Math.min(elapsed, duration - state.time);
+    const start = state.time;
+    const { net } = forecast(state, state.lights, solarAt(state.time + seconds / 2));
+    const reserveUsed = Math.min(state.reserve, Math.max(0, -(state.battery + net * seconds)));
+    state.reserve -= reserveUsed;
+    state.battery = Math.min(100, Math.max(0, state.battery + net * seconds + reserveUsed));
+    state.time += seconds;
+    const powered = net >= 0 || state.battery > 0 || state.reserve > 0;
+    const lamp = powered ? settings.lights[state.lights] : settings.lights.off;
+    const airRate = powered && state.airOn ? .65 : state.shelter ? -3.35 : -2.2;
+    state.air = Math.min(100, Math.max(0, state.air + airRate * seconds));
+    state.water = Math.min(100, Math.max(0, state.water + ((powered && state.waterOn ? .57 : -.8) - lamp.growth * .18) * seconds));
+    state.food = Math.max(0, state.food - .55 * seconds);
+    if (state.water > 0) state.crop += lamp.growth * seconds;
+    if (state.crop >= 100) {
+      state.crop -= 100;
+      state.harvests += 1;
+      state.food = Math.min(100, state.food + 35);
+    }
+    const stormSeconds = Math.max(0, Math.min(state.time, particleEnd) - Math.max(start, particleStart));
+    state.radiation += (state.shelter ? .21 : 1.65) * stormSeconds;
+    if (state.lab && powered) {
+      state.lab.remaining -= seconds;
+      if (state.lab.remaining <= 0) {
+        state.analyzed.push(state.lab.sample);
+        state.lab = null;
+      }
+    }
+    state.failure = !state.air ? "air" : !state.water ? "water" : !state.food ? "food" : state.radiation >= 19 ? "radiation" : "";
+  }
+
+  return { duration, particleStart, particleEnd, spareCapacity, solarAt, newState, forecast, advance };
 })();
 
 if (typeof module !== "undefined") module.exports = Mission;
