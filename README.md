@@ -6,7 +6,9 @@ Open `dist/index.html` directly in a desktop browser to play offline. To host th
 
 ## Explore the outpost
 
-Choose Start mission. Click a location to walk there and open its controls, or move with WASD and press E nearby. Press Space or use the pause button to freeze time while planning. Opening NASA data or the astronaut editor pauses the clock. The simulation pauses when the tab becomes hidden.
+Click a location to walk there and open its controls, or move with WASD and press E nearby. In setup, set a light level in at least one greenhouse tray. You can carry the sensor and spare battery from Storage to the solar array before launching. Start the mission when you are ready. Open **Hint** on the map or inside a module to see context-specific help.
+
+Press Space or use the pause button to freeze time while planning. Opening NASA data or the astronaut editor pauses the clock. The simulation also pauses when the tab becomes hidden.
 
 ## Publish with GitHub Pages
 
@@ -33,4 +35,6 @@ The portable ZIP puts the full website at the top level. Extract it and upload t
 
 ## Design decision
 
-The live mission runs on a compressed 100-second clock with player-controlled pause. The map and radio prompts guide the route through preparation, dust, a separate solar particle event, and recovery. Module switches affect the simulation immediately. The greenhouse compares time to harvest and battery runtime under constant peak-dust output and current loads. A science pass is optional. The mission objective is to keep the crew safe and harvest at least one crop. Resource rates and the event clock are game parameters. Open NASA data in the game for research sources.
+Mission 1 lasts five minutes after untimed setup. Keep the crew safe and harvest at least one tray to unlock Mission 2, a six-minute run on the same map with less food and a longer dust storm. Mission 2 compares its results with the last successful training run. Unlocks and the training result are saved in this browser.
+
+The greenhouse trays share water and start with the same crop and growth. The light settings trade harvest time for power and each tray reports its energy use and time without growth. The sensor plots a normalized solar output series and an illustrative opacity index derived from it. Curves, event timings and resource rates are game parameters. The sources panel explains the real observations that inspired the model.

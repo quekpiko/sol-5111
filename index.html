@@ -6,13 +6,13 @@
   <meta name="description" content="A real-time Mars outpost story inspired by NASA observations." data-i18n-content="description">
   <meta name="theme-color" content="#161712">
   <title>Sol 5111 — Mars Mission Trainer</title>
-  <link rel="stylesheet" href="style.css?v=live-1">
-  <link rel="stylesheet" href="surface.css?v=live-1">
-  <script src="engine.js?v=live-1" defer></script>
-  <script src="languages.js?v=live-1" defer></script>
-  <script src="game.js?v=live-1" defer></script>
-  <script src="avatar.js?v=live-1" defer></script>
-  <script src="world.js?v=live-1" defer></script>
+  <link rel="stylesheet" href="style.css?v=field-2">
+  <link rel="stylesheet" href="surface.css?v=field-2">
+  <script src="engine.js?v=field-2" defer></script>
+  <script src="languages.js?v=field-2" defer></script>
+  <script src="game.js?v=field-2" defer></script>
+  <script src="avatar.js?v=field-2" defer></script>
+  <script src="world.js?v=field-2" defer></script>
 </head>
 <body>
   <header class="mission-bar">
@@ -28,13 +28,18 @@
   <main class="game">
     <section class="radio" aria-labelledby="radio-title">
       <div class="radio-copy">
-        <p class="eyebrow" data-i18n="radio">MISSION CONTROL · RADIO</p>
+        <p class="eyebrow" id="mission-name"></p>
         <h2 id="radio-title" aria-live="polite"></h2>
         <p id="radio-message"></p>
+        <p id="event-clock" hidden></p>
       </div>
-      <button class="primary" id="guide" type="button"></button>
+      <div class="radio-actions">
+        <button class="secondary" id="missions" type="button" hidden></button>
+        <button class="primary" id="guide" type="button"></button>
+      </div>
     </section>
-    <section class="viewport" aria-label="Mars outpost">
+    <details class="hint-drawer" id="field-hint"><summary data-i18n="hint">Hint</summary><p id="field-hint-text"></p></details>
+    <section class="viewport" aria-label="Mars outpost" data-i18n-aria-label="mapLabel">
       <div class="terrain" id="terrain" tabindex="0" aria-describedby="map-help">
         <div class="surface-art" aria-hidden="true"></div>
         <div class="weather" aria-hidden="true"></div>
@@ -50,6 +55,7 @@
         <button type="button" class="station" data-station="storage"><i aria-hidden="true"></i><span data-i18n="stationStorage">Storage</span></button>
         <button type="button" class="station" data-station="ridge"><i aria-hidden="true"></i><span data-i18n="stationRidge">Rock outcrop</span></button>
         <button type="button" class="station" data-station="basin"><i aria-hidden="true"></i><span data-i18n="stationBasin">Regolith site</span></button>
+        <div class="map-cargo" id="cargo" hidden></div>
         <div class="map-controls">
           <div class="crew">
             <div class="astronaut" id="avatar-card" aria-hidden="true"><div class="spacesuit"></div><div class="helmet"><span class="visor"></span></div><b class="patch">★</b></div>
@@ -71,13 +77,33 @@
     <div class="room-view" id="room-view" aria-hidden="true"></div>
     <p class="room-detail" id="room-detail"></p>
     <p class="room-detail" id="room-power" hidden></p>
+    <p id="room-alert" class="event-banner" hidden></p>
+    <div class="room-trays" id="room-trays" hidden></div>
+    <section class="telemetry" id="telemetry" hidden>
+      <h3 data-i18n="telemetry">Sensor readings</h3>
+      <p id="sensor-status"></p>
+      <div class="chart-grid" id="sensor-charts" hidden>
+        <figure><figcaption data-i18n="dustChart">Opacity index · 0–100</figcaption><canvas id="dust-chart" width="320" height="100" aria-hidden="true"></canvas></figure>
+        <figure><figcaption data-i18n="solarChart">Solar output · normalized 0–10</figcaption><canvas id="solar-chart" width="320" height="100" aria-hidden="true"></canvas></figure>
+      </div>
+      <p class="chart-time" id="chart-time" hidden></p>
+    </section>
     <div class="room-controls" id="room-controls"></div>
     <p class="room-feedback" id="room-feedback" aria-live="polite"></p>
+    <details class="hint-drawer" id="room-hint"><summary data-i18n="hint">Hint</summary><p id="room-hint-text"></p></details>
   </dialog>
   <dialog id="debrief" aria-labelledby="outcome-title">
     <div class="drawer-head"><h2 id="outcome-title"></h2><form method="dialog"><button class="secondary" data-i18n="exitRoom">Exit to map</button></form></div>
     <p id="outcome-text"></p><ul id="outcome-stats"></ul>
-    <button class="primary" id="replay" type="button" data-i18n="replayMission">Replay mission</button>
+    <div class="action-row">
+      <button class="primary" id="next-mission" type="button" hidden></button>
+      <button class="secondary" id="replay" type="button" data-i18n="replayMission">Replay mission</button>
+    </div>
+  </dialog>
+  <dialog id="mission-picker" aria-labelledby="picker-title">
+    <div class="drawer-head"><h2 id="picker-title" data-i18n="missions">Missions</h2><form method="dialog"><button class="secondary" data-i18n="exitRoom" autofocus>Exit to map</button></form></div>
+    <div class="mission-options" id="mission-options"></div>
+    <p id="picker-note" class="picker-note"></p>
   </dialog>
   <dialog id="avatar-editor" aria-labelledby="avatar-title">
     <div class="drawer-head">
@@ -135,6 +161,7 @@
     </figure>
     <h3 data-i18n="dustHeading">2018 · Opportunity dust storm</h3>
     <p><span data-i18n="dustBody">Opportunity had 21 Wh available on sol 5111. Six points derived from the chart anchor the tightening of the power budget. Intermediate and recovery turns are modeled. Sol labels indicate selected dates in the scenario, and turns compress time.</span> <a target="_blank" rel="noopener" href="https://science.nasa.gov/resource/on-mars-light-is-energy/" data-i18n="chartLink">Original NASA chart ↗</a></p>
+    <p data-i18n="sensorScience">The outpost sensor shows a simulated opacity index.</p>
     <h3 data-i18n="solarHeading">2024 · Curiosity watches a solar storm</h3>
     <p><span data-i18n="solarBody">NASA reported a dose of 8,100 μGy for the May 20 event at Curiosity's location. This observation inspires the final shelter decision. The game assigns 1 or 5 exposure points for teaching purposes.</span> <a target="_blank" rel="noopener" href="https://www.nasa.gov/solar-system/planets/mars/nasa-watches-mars-light-up-during-epic-solar-storm/" data-i18n="radLink">Curiosity RAD event ↗</a></p>
     <h3 data-i18n="defenseSources">Technical sources for the simulation</h3>

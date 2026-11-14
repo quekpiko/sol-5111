@@ -31,26 +31,48 @@ function stationLabel(id) {
   return staticText[stations[id].label][language === "uk" ? 1 : 0];
 }
 
+const fieldHint = byId("field-hint");
+let drawnReadings = null;
+
 function guideTarget() {
   const phase = phaseKey();
-  if (phase === "ready") return "greenhouse";
-  if (phase === "prepare") return state.lights === "off" ? "greenhouse" : state.pack === "storage" ? "storage" : state.pack === "carried" ? "solar" : "greenhouse";
-  if (phase === "dust") return state.pack === "carried" ? "solar" : state.lights === "off" && state.pack === "storage" ? "storage" : "greenhouse";
+  if (phase === "ready") return canLaunch() ? "" : "greenhouse";
+  if (!fieldHint.open || state.mission === "extended") return "";
+  if (phase === "prepare") return state.sensor === "storage" ? "storage" : "solar";
+  if (phase === "dust") return state.pack === "carried" ? "solar" : "greenhouse";
   if (phase === "warning" || phase === "shelter") return "shelter";
-  if (phase === "recover") return state.harvests && state.samples.length ? "habitat" : "greenhouse";
+  if (phase === "recover") return hasHarvest() && state.samples.length ? "habitat" : "greenhouse";
   return "";
 }
 
 function updateWorld() {
   const key = radioKey();
+  const phase = phaseKey();
   if (key !== radio) {
     radio = key;
-    byId("radio-title").textContent = copy.brief[key][0];
-    byId("radio-message").textContent = copy.brief[key][1];
+    byId("mission-name").textContent = copy.missions[state.mission].name;
+    const [title, body] = copy.brief[key];
+    byId("radio-title").textContent = title;
+    byId("radio-message").textContent = key === "ready" ? copy.missions[state.mission].intro : body;
+    byId("field-hint-text").textContent = (state.mission === "extended" ? copy.hardHints : copy.hints)[phase] || "";
   }
+  fieldHint.hidden = finished;
+  byId("missions").hidden = started && !finished;
+  byId("missions").textContent = copy.missionMenu;
+  terrain.dataset.lighting = state.powered ? state.trays.reduce((level, tray) =>
+    tray.harvestedAt !== null ? level : Math.max(level, ["off", "dim", "full"].indexOf(tray.light)), 0) : 0;
+  terrain.dataset.ventilation = String(state.shelter && state.powered && state.airOn);
+  terrain.dataset.weakSolar = String(forecast(state).solar < 5);
+  terrain.dataset.sensor = state.sensor;
+  byId("cargo").textContent = [
+    state.sensor === "carried" ? copy.sensorItem : "",
+    state.pack === "carried" ? copy.batteryItem : ""
+  ].filter(Boolean).join(" · ");
+  byId("cargo").hidden = !byId("cargo").textContent;
   const target = guideTarget();
   for (const marker of markers) marker.dataset.target = String(marker.dataset.station === target);
-  guideButton.textContent = finished ? copy.outcome : started ? `${copy.guide} · ${stationLabel(target)}` : copy.start;
+  guideButton.hidden = started && !finished && !target;
+  guideButton.textContent = finished ? copy.outcome : !started && canLaunch() ? copy.start(formatTime(state.scenario.duration)) : target ? `${copy.guide} · ${stationLabel(target)}` : "";
   const rect = terrain.getBoundingClientRect();
   let best = 46;
   nearby = "";
@@ -112,7 +134,7 @@ function animate(now) {
   requestAnimationFrame(animate);
 }
 
-function addControl(label, execute, key, detail = "") {
+function addControl(label, execute, key, parent = byId("room-controls")) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "secondary";
@@ -120,7 +142,6 @@ function addControl(label, execute, key, detail = "") {
   const heading = document.createElement("strong");
   heading.textContent = label;
   const description = document.createElement("small");
-  description.textContent = detail;
   button.append(heading, description);
   button.addEventListener("click", () => {
     if (finished || button.disabled) return;
@@ -128,7 +149,8 @@ function addControl(label, execute, key, detail = "") {
     refreshRoom();
     updateWorld();
   });
-  byId("room-controls").append(button);
+  parent.append(button);
+  return button;
 }
 
 function buildRoom() {
@@ -137,63 +159,166 @@ function buildRoom() {
   byId("room-view").dataset.room = stations[id].inside ? id : "";
   byId("room-view").hidden = !stations[id].inside;
   byId("room-detail").textContent = copy.room[id];
+  byId("room-hint-text").textContent = copy.roomHint[id];
   byId("room-power").hidden = id !== "greenhouse" && id !== "solar";
   byId("room-feedback").textContent = "";
   byId("room-controls").replaceChildren();
+  byId("room-trays").hidden = id !== "greenhouse";
+  byId("room-trays").replaceChildren();
+  byId("telemetry").hidden = id !== "solar";
+  drawnReadings = null;
 
   if (id === "greenhouse") {
-    for (const light of Object.keys(copy.lights)) {
-      addControl(copy.lights[light], () => { state.lights = light; }, light);
-    }
+    state.trays.forEach((tray, index) => {
+      const panel = document.createElement("section");
+      panel.className = "tray";
+      const title = document.createElement("h3");
+      title.textContent = copy.tray(index + 1);
+      const meter = document.createElement("progress");
+      meter.max = 100;
+      meter.setAttribute("aria-label", title.textContent);
+      const stats = document.createElement("p");
+      const controls = document.createElement("div");
+      controls.className = "tray-controls";
+      for (const light of Object.keys(copy.lights)) {
+        addControl(copy.lights[light], () => { tray.light = light; }, light, controls);
+      }
+      panel.append(title, meter, stats, controls);
+      byId("room-trays").append(panel);
+    });
   } else if (id === "habitat") {
     addControl(copy.air, () => { state.airOn = !state.airOn; }, "air");
     addControl(copy.water, () => { state.waterOn = !state.waterOn; }, "water");
     addControl(copy.lab, () => {
       const sample = state.samples.find((item) => !state.analyzed.includes(item));
-      if (sample && !state.lab) state.lab = { sample, remaining: 8 };
+      if (sample && !state.lab) state.lab = { sample, remaining: 16 };
     }, "lab");
   } else if (id === "shelter") {
     addControl(copy.ventilation, () => { state.shelter = !state.shelter; }, "shelter");
-  } else if (id === "storage" && state.pack === "storage") {
+  } else if (id === "storage") {
     addControl(copy.pick, () => { state.pack = "carried"; byId("room-feedback").textContent = copy.feedback.pick; }, "pack");
-  } else if (id === "solar" && state.pack === "carried") {
-    addControl(copy.connect, () => { state.pack = "connected"; state.reserve = Mission.spareCapacity; byId("room-feedback").textContent = copy.feedback.connect; }, "connect");
+    addControl(copy.pickSensor, () => { state.sensor = "carried"; byId("room-feedback").textContent = copy.sensorPicked; }, "sensor");
+  } else if (id === "solar") {
+    addControl(copy.connect, () => {
+      state.pack = "connected";
+      state.reserve = Mission.spareCapacity;
+      byId("room-feedback").textContent = copy.feedback.connect;
+    }, "connect");
+    addControl(copy.installSensor, () => {
+      state.sensor = "installed";
+      Mission.recordReading(state);
+    }, "install");
   } else if (stations[id].sample) {
     addControl(copy.collect, () => { state.samples.push(id); byId("room-feedback").textContent = copy.feedback.collect; }, "sample");
   }
 }
 
+function drawChart(canvas, key, limit, color) {
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+  const heightInset = 8;
+  ctx.lineWidth = 1;
+  const x = (time) => 6 + (width - 12) * time / state.scenario.duration;
+  const y = (value) => height - heightInset - (height - 2 * heightInset) * value / limit;
+  ctx.clearRect(0, 0, width, height);
+  ctx.strokeStyle = "#51432e";
+  ctx.beginPath();
+  for (const level of [0, .5, 1]) {
+    ctx.moveTo(x(0), y(level * limit));
+    ctx.lineTo(x(state.scenario.duration), y(level * limit));
+  }
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = ctx.fillStyle = color;
+  for (const [index, point] of state.readings.entries()) {
+    if (index === 0) ctx.moveTo(x(point.time), y(point[key]));
+    else ctx.lineTo(x(point.time), y(point[key]));
+  }
+  ctx.stroke();
+  const last = state.readings.at(-1);
+  ctx.beginPath();
+  ctx.arc(x(last.time), y(last[key]), 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function refreshTelemetry() {
+  const last = state.readings.at(-1);
+  byId("sensor-charts").hidden = !last;
+  byId("chart-time").hidden = !last;
+  byId("chart-time").textContent = copy.chartTime(formatTime(state.scenario.duration));
+  byId("sensor-status").textContent = last ? copy.sensorReading(formatTime(last.time), Math.round(last.opacity), decimal(last.solar), state.readings.length)
+    : state.sensor === "carried" ? copy.sensorPicked : copy.sensorAtStorage;
+  if (last && last !== drawnReadings) {
+    drawChart(byId("dust-chart"), "opacity", 100, "#f39d76");
+    drawChart(byId("solar-chart"), "solar", 10, "#ffd18a");
+    drawnReadings = last;
+  }
+}
+
+function refreshTrays() {
+  for (const [index, panel] of [...byId("room-trays").children].entries()) {
+    const tray = state.trays[index];
+    const done = tray.harvestedAt !== null;
+    panel.dataset.light = done ? "harvest" : tray.light;
+    panel.querySelector("progress").value = tray.growth;
+    panel.querySelector("p").textContent = done ? copy.trayReady(formatTime(tray.harvestedAt), decimal(tray.energy)) :
+      copy.trayLive(Math.floor(tray.growth), decimal(tray.energy));
+    for (const button of panel.querySelectorAll("button")) {
+      const light = button.dataset.control;
+      const goal = forecast(state, 1, index, light);
+      const eta = goal.harvestSeconds[index];
+      button.disabled = done;
+      button.setAttribute("aria-pressed", String(!done && tray.light === light));
+      button.querySelector("small").textContent = done ? "" :
+        `${Number.isFinite(eta) ? copy.cropETA(formatTime(eta)) : copy.noHarvest} · ${Number.isFinite(goal.batterySeconds) ? copy.batteryETA(formatTime(goal.batterySeconds)) : copy.charge}`;
+    }
+  }
+  byId("room-feedback").textContent = copy.projected;
+}
+
 function refreshRoom() {
+  const energy = forecast(state);
+  const alert = eventCountdown();
+  byId("room-alert").hidden = !alert;
+  byId("room-alert").textContent = alert;
   if (!byId("room-power").hidden) {
-    const { solar, load } = forecast(state);
-    byId("room-power").textContent = copy.power(solar.toFixed(1), load, Math.round(state.reserve));
+    byId("room-power").textContent = copy.power(decimal(energy.generation), decimal(energy.load), decimal(state.reserve));
   }
   for (const button of byId("room-controls").querySelectorAll("button")) {
     const key = button.dataset.control;
     const line = button.querySelector("small");
-    if (currentRoom === "greenhouse") {
-      const outlook = forecast(state, key, 1);
-      const battery = Number.isFinite(outlook.batterySeconds) ? `${copy.lasts} ${Math.ceil(outlook.batterySeconds)} ${copy.second}` : copy.continuous;
-      const harvest = Number.isFinite(outlook.harvestSeconds) ? `${copy.harvest} ${Math.ceil(outlook.harvestSeconds)} ${copy.second}` : copy.noHarvest;
-      line.textContent = `${battery} · ${harvest}`;
-      button.setAttribute("aria-pressed", String(state.lights === key));
-    } else if (["air","water","shelter"].includes(key)) {
+    if (["air", "water", "shelter"].includes(key)) {
       const active = state[key === "shelter" ? key : key + "On"];
-      line.textContent = active ? copy.feedback.on : copy.feedback.off;
+      line.textContent = active && !state.powered ? copy.noPower : copy.systemState(active);
       button.setAttribute("aria-pressed", String(active));
     } else if (key === "lab") {
       button.disabled = Boolean(state.lab) || state.samples.length === state.analyzed.length;
-      line.textContent = state.lab ? `${copy.feedback.queued} · ${Math.ceil(state.lab.remaining)} ${copy.second}`
+      line.textContent = state.lab ? `${copy.feedback.queued} · ${formatTime(state.lab.remaining)}`
         : state.analyzed.length ? copy.feedback.sampleDone : "";
-    } else if (key === "pack") button.disabled = state.pack !== "storage";
-    else if (key === "connect") button.disabled = state.pack !== "carried";
-    else if (key === "sample") button.disabled = state.samples.includes(currentRoom) || phaseKey() === "shelter";
+    } else if (key === "pack") {
+      button.disabled = state.pack !== "storage";
+      line.textContent = button.disabled ? copy.cargoTaken : "";
+    } else if (key === "connect") {
+      button.disabled = state.pack !== "carried";
+      line.textContent = state.pack === "connected" ? copy.connected : button.disabled ? copy.batteryAtStorage : "";
+    } else if (key === "sensor") {
+      button.disabled = state.sensor !== "storage";
+      line.textContent = button.disabled ? copy.cargoTaken : "";
+    } else if (key === "install") {
+      button.disabled = state.sensor !== "carried";
+      line.textContent = state.sensor === "installed" ? copy.sensorOnline : button.disabled ? copy.sensorAtStorage : "";
+    } else if (key === "sample") {
+      button.disabled = state.samples.includes(currentRoom) || phaseKey() === "shelter";
+    }
   }
   if (currentRoom === "greenhouse") {
-    byId("room-view").dataset.light = state.lights;
-    byId("room-feedback").textContent = copy.projected;
+    byId("room-view").dataset.light = ["off", "dim", "full"][Number(terrain.dataset.lighting)];
+    refreshTrays();
+  } else if (currentRoom === "solar") {
+    refreshTelemetry();
   } else if (currentRoom === "shelter") {
-    byId("room-feedback").textContent = state.shelter ? copy.shelterReady : "";
+    byId("room-feedback").textContent = copy.shelterStatus(decimal(exposureRate(state), 2), state.shelter && state.powered && state.airOn);
   }
 }
 
@@ -201,6 +326,7 @@ function enter(station) {
   if (finished || room.open || document.querySelector("dialog[open]")) return;
   keys.clear();
   currentRoom = station;
+  byId("room-hint").open = false;
   buildRoom();
   refreshRoom();
   room.showModal();
@@ -238,9 +364,8 @@ guideButton.addEventListener("click", () => {
   if (finished) {
     renderDebrief();
     byId("debrief").showModal();
-  } else if (!started) {
+  } else if (!started && canLaunch()) {
     startMission();
-    walk(stations.greenhouse, "greenhouse");
   } else {
     const target = guideTarget();
     if (target) walk(stations[target], target);
@@ -250,12 +375,14 @@ room.addEventListener("close", () => {
   currentRoom = "";
   if (!finished && !document.querySelector("dialog[open]")) terrain.focus({ preventScroll: true });
 });
+fieldHint.addEventListener("toggle", updateWorld);
 window.addEventListener("mission-change", updateWorld);
 window.addEventListener("mission-language", () => {
   radio = "";
   updateWorld();
 });
 window.addEventListener("mission-reset", () => {
+  radio = "";
   destination = null;
   openOnArrival = "";
   keys.clear();
