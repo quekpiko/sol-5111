@@ -1,6 +1,25 @@
 "use strict";
 
 const staticText = {
+  briefing: ["Mission briefing", "Брифінг місії"],
+  briefingEyebrow: ["SOL 5111 · SEVEN SOLS", "SOL 5111 · СІМ СОЛІВ"],
+  storyTitle: ["Your assignment · Fiction", "Твоє завдання · Ігровий сценарій"],
+  storyBody: [
+    "A planet-wide dust storm forced the main crew to evacuate to orbit. You are the junior engineer on duty at outpost Sol 5111. Your rescue shuttle can land at the end of Sol 7. Keep air and water available, save a crop, and power the landing beacon until touchdown.",
+    "Планетарна пилова буря змусила основний екіпаж евакуюватися на орбіту. Ти — молодший інженер на чергуванні в аванпості Sol 5111. Рятувальний шатл зможе сісти наприкінці 7-го солу, марсіанського дня. Збережи повітря, воду й урожай та забезпеч живлення посадкового маяка до приземлення."
+  ],
+  historyTitle: ["Real NASA observations", "Реальні спостереження NASA"],
+  historyOpportunity: ["On June 10, 2018, dust cut Opportunity’s available energy to 21 Wh on its sol 5111.", "10 червня 2018 року пил знизив доступну енергію Opportunity до 21 Вт·год на 5111-й сол роботи марсохода."],
+  historyCuriosity: ["On May 20, 2024, Curiosity’s radiation detector recorded 8,100 µGy during a solar particle event.", "20 травня 2024 року радіаційний детектор Curiosity зафіксував 8100 мкГр під час потоку сонячних частинок."],
+  historyPhoenix: ["Phoenix detected perchlorate salts in Martian soil, inspiring the greenhouse contamination in this mission.", "Phoenix виявив солі перхлоратів у марсіанському ґрунті. Це стало основою сценарію забруднення теплиці."],
+  historyMro: ["MRO’s MARCI camera tracks dust storms. The game’s forecasts, dose points and cleanup are simulated.", "Камера MARCI на MRO відстежує пилові бурі. Прогнози, бали опромінення й очищення теплиці в грі змодельовані."],
+  briefingContinue: ["Begin training", "Почати навчання"],
+  tutorialSkip: ["Skip tutorial", "Пропустити навчання"],
+  tutorialBack: ["Back", "Назад"],
+  tutorialNext: ["Next", "Далі"],
+  tutorialDone: ["Prepare the base", "Підготувати базу"],
+  reportLog: ["Previous orbital reports", "Попередні орбітальні зведення"],
+  stationBeacon: ["Landing beacon", "Посадковий маяк"],
   setup: ["Before you start", "Перед стартом"],
   restart: ["Restart mission", "Перезапустити місію"],
   restartDetail: ["Return to setup? Your progress in this attempt will be lost.", "Повернутися до підготовки? Прогрес цієї спроби буде втрачено."],
@@ -178,7 +197,7 @@ const languages = {
     foodReason: (harvested) => harvested ? "The first harvest did not cover the remaining food needs. Keep the second tray growing when the grid can support it." :
       "No tray ripened before the food ran out. Turn on a tray earlier and check the harvest estimate.",
     radiationReason: "The crew spent too much of the particle event outside shielding. Enter the shelter as soon as the alert comes in.",
-    unlockNote: "Keep the crew safe and harvest at least one tray in Mission 1 to unlock Mission 2.",
+    unlockNote: "Complete the Sol 7 rescue in the training campaign to unlock the extended campaign.",
     missions: {
       training: { name: "01 · DUST ON THE HORIZON", intro: "You run a Mars base. Grow food, keep the base powered during a dust storm, and shelter the crew when the solar particle alert arrives." },
       extended: { name: "02 · THE LONG STORM", intro: "A longer dust storm and less food. Set your growing plan before you start." }
@@ -310,7 +329,7 @@ const languages = {
     foodReason: (harvested) => harvested ? "Першого врожаю не вистачило до кінця місії. Підтримуй ріст другого лотка, коли мережа має запас потужності." :
       "Їжа закінчилася до першого врожаю. Увімкни освітлення раніше й перевір час дозрівання.",
     radiationReason: "Екіпаж надто довго залишався поза захистом під час радіаційної події. Переходь в укриття одразу після тривоги.",
-    unlockNote: "Збережи екіпаж і збери врожай хоча б з одного лотка в першій місії, щоб відкрити другу.",
+    unlockNote: "Заверши евакуацію на сьомий сол у навчальній місії, щоб відкрити тривалу кампанію.",
     missions: {
       training: { name: "01 · ПИЛ НА ГОРИЗОНТІ", intro: "Ти керуєш базою на Марсі. Вирости їжу, підтримуй живлення під час пилової бурі й укрий екіпаж, коли надійде сонячна тривога." },
       extended: { name: "02 · ТРИВАЛА БУРЯ", intro: "Довша пилова буря й менший запас їжі. Перед початком налаштуй теплицю." }
@@ -398,6 +417,169 @@ const languages = {
   }
 };
 
+languages.en.campaign = {
+  sol: (day, total) => `SOL ${day} / ${total}`,
+  orbital: (day) => `MRO ORBITAL REPORT · SOL ${day} · SIMULATED`,
+  setupIntro: "Set up the outpost before the seven-sol clock starts. A light in at least one tray is required. Collect a regolith sample for the lab if you have time.",
+  tutorialProgress: (step, total) => `TRAINING · ${step}/${total}`,
+  tutorial: [
+    ["Explore the outpost", "Click a building to walk there and open its controls. Use WASD or the arrow keys to walk manually. Press E at a doorway. Try moving the cadet on the map."],
+    ["One grid, six readings", "Battery, air, water and food are reserves. Crop shows the next harvest and exposure shows the radiation dose. Every powered system shares one grid. Press Space to pause and plan."],
+    ["Prepare before starting the clock", "Turn on a greenhouse tray. Carry the spare battery and dust sensor from Storage to the solar panels. The battery supplies backup power, and the sensor shows how dust affects the panels."]
+  ],
+  reports: [
+    ["Sol 1 · Check the outpost", "Cloud bands are approaching. This is your best chance to install the dust sensor, connect the spare battery and analyze regolith in the habitat."],
+    ["Sol 2 · Dust is cutting solar output", "Expect roughly 60–70% of clear-sky output by the start of Sol 3. Dim a tray if you need to save charge for the next shift."],
+    ["Sol 3 · Greenhouse seal under strain", "Wind is driving dust against the dome. If it breaks through, seal the dome and analyze regolith to unlock the cleanup recipe."],
+    ["Sol 4 · Clear the greenhouse", "Cleanup draws extra power while the trays cannot grow. Turn down unused lights. A separate solar particle alert is expected before the next sol."],
+    ["Sol 5 · Solar particle event", "Mission Control relays a space-weather alert. Get behind shielding. You must leave the shelter before servicing equipment outside."],
+    ["Sol 6 · Solar output near its minimum", "Expect as little as 10% of clear-sky output. The landing beacon is available now. Budget for life support and keep the beacon powered through touchdown."],
+    ["Sol 7 · Shuttle on final approach", "The landing beacon needs 12 seconds of continuous power to lock on. Keep it powered until touchdown, with a clean greenhouse and a harvested tray."]
+  ],
+  regolithPrep: { title: "Prepare the regolith analysis", missing: "Optional now · Collect regolith at the marked site", carried: "Optional now · Queue its analysis in the habitat", queued: "Ready · Analysis begins when the clock starts" },
+  phaseHints: {
+    prepare: "Collect regolith at the marked site and run its analysis in the habitat. The recipe is available even if you analyze it before the breach.",
+    breach: "Seal the dome first to stop the rise in contamination. Analyze regolith in the habitat, then start the cleanup when the grid has enough power.",
+    beacon: "If you lack charge at the start of Sol 6, let output recover before activating the beacon. Leave at least 12 seconds until touchdown."
+  },
+  growthLocked: "Growth blocked by contamination",
+  toxins: (amount) => `Greenhouse contamination · ${amount}%`,
+  toxinsStatus: (amount, open, eta) => `Contamination ${amount}% · ${open ? "Dust entering through the breach" : eta ? `Cleanup needs ${eta} of powered time` : "Breach sealed. Growth remains blocked until cleanup."}`,
+  clean: "Greenhouse clean",
+  breachAlert: "Greenhouse breach → dust and perchlorates are blocking growth.",
+  signalReady: "Landing signal locked",
+  signalNeeded: "Landing beacon needed",
+  signalProgress: (time) => `Signal locks after ${time} of continuous power`,
+  beaconRoom: "The shuttle needs this signal to find the landing pad. A blackout cancels the lock. Keep power on until touchdown.",
+  beaconToggle: "Power the landing beacon",
+  stopBeacon: "Switch off the landing beacon",
+  beaconCost: (cost, seconds) => `${cost} u/s · Needs ${seconds} seconds of continuous power. Switching off resets the signal.`,
+  seal: "Seal the greenhouse breach",
+  sealCost: "0 u/s · Stops new dust from entering. Contamination already inside still blocks growth.",
+  decon: "Run perchlorate cleanup",
+  pauseDecon: "Pause perchlorate cleanup",
+  deconCost: (cost) => `${cost} u/s while running · Restores growth after cleanup. High demand can drain the battery.`,
+  needSeal: "Seal the breach first",
+  needFormula: "Analyze regolith to unlock the recipe",
+  leaveShelter: "Leave shelter",
+  shield: (cost) => `Shelter cuts exposure by about 87% · Ventilation draws ${cost} u/s · You cannot service outside modules while inside.`,
+  unshield: (cost) => `Saves ${cost} u/s and restores map access · The crew will be exposed during the particle event.`,
+  draw: (power) => `${power} u/s`,
+  lifeSupport: {
+    air: (power, on) => `${on ? "Running" : "Off"} · ${power} u/s · Switching off saves power while the air reserve falls.`,
+    water: (power, on) => `${on ? "Running" : "Off"} · ${power} u/s · Switching off saves power while the water reserve falls.`
+  },
+  analyze: { basin: "Analyze regolith", ridge: "Analyze rock" },
+  needSample: "Collect the sample outside first",
+  labCost: (cost, sample) => `${cost} u/s for 16 seconds · ${sample === "basin" ? "Unlocks greenhouse cleanup" : "Cuts water recycling draw by 15%"} · Adds to grid demand`,
+  fieldActions: {
+    pack: "0 u/s · Carry it to the panels for backup during a deficit.",
+    connect: "0 u/s · Adds a finite reserve. It takes over when the main battery runs out.",
+    sensor: "0 u/s · Carry it to the panels to measure the storm.",
+    install: "0 u/s in this model · Records when output falls. Install early for a clear-sky baseline.",
+    sample: "0 u/s · Bring it to the habitat lab. Outside, you are exposed during a solar particle event."
+  },
+  cleanResult: (time) => `The regolith analysis unlocked cleanup. At ${time} the cleanup finished, so plants could grow again.`,
+  filterResult: "The rock analysis cut the water recycler’s electrical draw by 15%.",
+  signalResult: "The landing beacon held a continuous powered signal through touchdown.",
+  rescueTitle: "Rescue shuttle on the ground",
+  rescue: "The shuttle has touched down at Sol 5111. You’re aboard, the outpost is secured, and the evacuation is complete.",
+  ranks: ["Cadet", "Flight Engineer", "Mission Commander"],
+  rank: (name) => `Engineering rank · ${name}`,
+  failures: {
+    toxins: "Greenhouse lost. Perchlorate contamination reached 100%. Seal the dome as soon as dust gets in, then run cleanup.",
+    contamination: "The shuttle reached the outpost, but the greenhouse was still contaminated. Analyze regolith and budget power for cleanup earlier.",
+    harvest: "The greenhouse was safe, but no crop was harvested. Start a tray earlier or restore lighting after cleanup.",
+    beacon: "The shuttle could not land without a stable beacon signal. Enable the beacon on Sol 6 or 7 and supply at least 12 uninterrupted seconds of power through touchdown.",
+    radiation: "Exposure exceeded the training limit. Get behind the shelter walls before the solar particles arrive.",
+    air: "The breathable air reserve ran out. Check the scrubber, the battery and what else was drawing power."
+  }
+};
+
+languages.uk.campaign = {
+  sol: (day, total) => `СОЛ ${day} / ${total}`,
+  orbital: (day) => `ОРБІТАЛЬНЕ ЗВЕДЕННЯ MRO · СОЛ ${day} · СИМУЛЯЦІЯ`,
+  setupIntro: "Підготуй базу до відліку семи солів. Потрібно освітити хоча б один лоток. За можливості відбери зразок реголіту для лабораторії.",
+  tutorialProgress: (step, total) => `НАВЧАННЯ · ${step}/${total}`,
+  tutorial: [
+    ["Оглянь аванпост", "Натисни на будівлю, щоб дійти до неї й відкрити пульт. Для ручного руху використовуй WASD або стрілки, біля входу натискай E. Спробуй пройтися картою."],
+    ["Одна мережа й шість показників", "Батарея, повітря, вода та їжа — це запаси. Ріст показує, скільки лишилося до врожаю, а опромінення — накопичену дозу. Усі прилади живляться від однієї мережі. Пробіл ставить гру на паузу."],
+    ["Підготуйся до запуску таймера", "Увімкни світло над одним лотком. Віднеси резервну батарею й датчик пилу зі складу до панелей. Батарея підхопить живлення, а датчик покаже, як пил знижує виробіток."]
+  ],
+  reports: [
+    ["Сол 1 · Перевірка бази", "Наближаються хмари пилу. Саме час встановити датчик, під’єднати резервну батарею й проаналізувати реголіт у житловому модулі."],
+    ["Сол 2 · Пил знижує виробіток", "До початку третього солу очікуємо близько 60–70% виробітку за ясного неба. Приглуши світло в лотку, якщо треба зберегти заряд."],
+    ["Сол 3 · Купол теплиці під загрозою", "Вітер несе пил на купол. Якщо герметичність порушиться, закрий пробоїну та проаналізуй реголіт, щоб отримати формулу очищення."],
+    ["Сол 4 · Знезараження теплиці", "Під час очищення рослини ще не ростуть, а система потребує додаткового живлення. Вимкни зайве світло. До наступного солу можлива окрема сонячна тривога."],
+    ["Сол 5 · Потік сонячних частинок", "Центр керування передає радіаційну тривогу. Йди за захисні стіни. Для ремонту інших модулів доведеться вийти з укриття."],
+    ["Сол 6 · Мало сонячної енергії", "Виробіток може впасти до 10% від ясного неба. Маяк доступний. Розподіли заряд між життєзабезпеченням і сигналом шатла."],
+    ["Сол 7 · Шатл заходить на посадку", "Маяку потрібно 12 секунд безперервного живлення для захоплення сигналу. Тримай його ввімкненим до посадки, очисть теплицю та збери врожай."]
+  ],
+  regolithPrep: { title: "Підготуй аналіз реголіту", missing: "Можна заздалегідь · Відбери реголіт на карті", carried: "Можна заздалегідь · Заплануй аналіз у житловому модулі", queued: "Готово · Аналіз почнеться із запуском таймера" },
+  phaseHints: {
+    prepare: "Відбери реголіт на позначеній ділянці й проаналізуй його в житловому модулі. Формулу можна отримати до аварії.",
+    breach: "Спочатку закрий пробоїну, щоб забруднення не зростало. Проаналізуй реголіт у лабораторії, потім запусти очищення, коли вистачатиме енергії.",
+    beacon: "Якщо на початку шостого солу заряду мало, дочекайся відновлення виробітку. Залиш щонайменше 12 секунд до посадки, щоб маяк захопив сигнал."
+  },
+  growthLocked: "Забруднення зупинило ріст",
+  toxins: (amount) => `Забруднення теплиці · ${amount}%`,
+  toxinsStatus: (amount, open, eta) => `Забруднення ${amount}% · ${open ? "Пил потрапляє через пробоїну" : eta ? `На очищення потрібне живлення протягом ${eta}` : "Купол герметичний. Ріст відновиться після очищення."}`,
+  clean: "Теплицю очищено",
+  breachAlert: "Порушено герметичність теплиці → пил із перхлоратами зупинив ріст.",
+  signalReady: "Маяк тримає сигнал",
+  signalNeeded: "Потрібен сигнал маяка",
+  signalProgress: (time) => `До захоплення сигналу потрібно ${time} безперервного живлення`,
+  beaconRoom: "За цим сигналом шатл знаходить майданчик. Без живлення маяк втрачає захоплення. Тримай його ввімкненим до посадки.",
+  beaconToggle: "Увімкнути посадковий маяк",
+  stopBeacon: "Вимкнути посадковий маяк",
+  beaconCost: (cost, seconds) => `${cost} од./с · Потрібно ${seconds} с безперервного живлення. Вимкнення скидає сигнал.`,
+  seal: "Загерметизувати купол",
+  sealCost: "0 од./с · Зупиняє надходження пилу. Забруднення всередині ще блокує ріст.",
+  decon: "Запустити очищення від перхлоратів",
+  pauseDecon: "Призупинити очищення",
+  deconCost: (cost) => `${cost} од./с під час роботи · Повертає ріст після очищення. Високе навантаження може розрядити батарею.`,
+  needSeal: "Спочатку загерметизуй купол",
+  needFormula: "Проаналізуй реголіт, щоб отримати формулу",
+  leaveShelter: "Вийти з укриття",
+  shield: (cost) => `Укриття зменшує опромінення приблизно на 87% · Вентиляція потребує ${cost} од./с · Поки ти всередині, інші модулі недоступні.`,
+  unshield: (cost) => `Економить ${cost} од./с і відкриває доступ до карти · Під час потоку частинок опромінення зростатиме швидше.`,
+  draw: (power) => `${power} од./с`,
+  lifeSupport: {
+    air: (power, on) => `${on ? "Працює" : "Вимкнено"} · ${power} од./с · Вимкнення економить енергію, але запас повітря падає.`,
+    water: (power, on) => `${on ? "Працює" : "Вимкнено"} · ${power} од./с · Вимкнення економить енергію, але запас води падає.`
+  },
+  analyze: { basin: "Проаналізувати реголіт", ridge: "Проаналізувати породу" },
+  needSample: "Спочатку відбери зразок на карті",
+  labCost: (cost, sample) => `${cost} од./с протягом 16 с · ${sample === "basin" ? "Відкриває очищення теплиці" : "Зменшує витрати переробника води на 15%"} · Збільшує навантаження на мережу`,
+  fieldActions: {
+    pack: "0 од./с · Віднеси до панелей для резервного живлення.",
+    connect: "0 од./с · Додає запас енергії. Резерв вмикається після розряду основної батареї.",
+    sensor: "0 од./с · Віднеси до панелей, щоб виміряти наслідки бурі.",
+    install: "0 од./с у цій моделі · Записує падіння виробітку. Для порівняння встанови за ясного неба.",
+    sample: "0 од./с · Віднеси зразок до лабораторії. Під час радіаційної події надворі зростає опромінення."
+  },
+  cleanResult: (time) => `Аналіз реголіту відкрив очищення. На позначці ${time} очищення завершилося, і рослини знову могли рости.`,
+  filterResult: "Аналіз породи зменшив витрати енергії на переробку води на 15%.",
+  signalResult: "Посадковий маяк тримав безперервний сигнал до приземлення.",
+  rescueTitle: "Рятувальний шатл приземлився",
+  rescue: "Шатл успішно сів на майданчик Sol 5111. Ти на борту, аванпост у безпеці. Евакуацію завершено.",
+  ranks: ["Кадет", "Бортінженер", "Командир місії"],
+  rank: (name) => `Інженерний ранг · ${name}`,
+  failures: {
+    toxins: "Теплицю втрачено. Забруднення перхлоратами досягло 100%. Одразу загерметизуй купол і запусти очищення.",
+    contamination: "Шатл дістався аванпосту, але теплиця залишилася забрудненою. Проаналізуй реголіт і раніше виділи енергію на очищення.",
+    harvest: "Теплиця безпечна, але врожаю немає. Увімкни світло раніше або віднови його після очищення.",
+    beacon: "Шатл не зміг сісти без стабільного сигналу. Увімкни маяк на шостий або сьомий сол і забезпеч щонайменше 12 секунд безперервного живлення до посадки.",
+    radiation: "Опромінення перевищило навчальну межу. Зайди за стіни укриття до приходу сонячних частинок.",
+    air: "Запас придатного для дихання повітря вичерпано. Перевір очищувач, заряд батареї та споживання інших систем."
+  }
+};
+
+for (const [id, keys] of Object.entries({ en: ["GREENHOUSE BREACH", "RESCUE BEACON"], uk: ["ПРОБИТТЯ КУПОЛА", "РЯТУВАЛЬНИЙ МАЯК"] })) {
+  languages[id].phases.breach = keys[0];
+  languages[id].phases.beacon = keys[1];
+}
+
 function readLanguage() {
   try {
     return localStorage.getItem("sol-5111-language") === "uk" ? "uk" : "en";
@@ -411,6 +593,7 @@ function applyLanguage(language) {
   document.documentElement.lang = language;
   document.title = languages[language].title;
   document.getElementById("language").value = language;
+  document.getElementById("briefing-language").value = language;
   document.getElementById("avatar-name").placeholder = languages[language].defaultCallSign;
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     element.textContent = staticText[element.dataset.i18n][index];

@@ -17,6 +17,8 @@ let nextRefresh = 0;
 let displayedHarvests = 0;
 let foodNoticeUntil = 0;
 const restartDialog = byId("restart-confirm");
+const tutorialTargets = ["terrain", "hud", "setup"];
+let tutorialStep = 0;
 
 const meters = Object.fromEntries(resources.map((key) => {
   const element = document.createElement("div");
@@ -39,9 +41,10 @@ function phaseKey() {
   if (finished) return "complete";
   if (!started) return "ready";
   const { particleStart, particleEnd, warning, dust } = state.scenario;
-  if (state.time >= particleEnd) return "recover";
+  if (state.time >= particleEnd) return "beacon";
   if (state.time >= particleStart) return "shelter";
   if (state.time >= warning) return "warning";
+  if (state.toxins > 0) return "breach";
   if (state.time >= dust) return "dust";
   return "prepare";
 }
@@ -59,7 +62,7 @@ function canLaunch() {
 }
 
 function radioKey() {
-  if (finished) return state.failure ? "failed" : hasHarvest() ? "complete" : "partial";
+  if (finished) return state.failure ? "failed" : "complete";
   const phase = phaseKey();
   if (phase === "ready" && canLaunch()) return "checked";
   if (phase === "shelter" && state.shelter) return "protected";
@@ -82,6 +85,26 @@ function eventCountdown() {
   if (phase === "warning") return copy.particleCountdown(formatTime(state.scenario.particleStart - state.time));
   if (phase === "shelter") return copy.particleRemaining(formatTime(state.scenario.particleEnd - state.time));
   return "";
+}
+
+function renderTutorial(navigate = false) {
+  const tutorial = byId("tutorial");
+  const target = tutorialTargets[tutorialStep];
+  tutorial.hidden = !target;
+  document.body.dataset.tutorial = target || "";
+  if (target) {
+    const [title, text] = copy.campaign.tutorial[tutorialStep];
+    byId("tutorial-step").textContent = copy.campaign.tutorialProgress(tutorialStep + 1, tutorialTargets.length);
+    byId("tutorial-title").textContent = title;
+    byId("tutorial-text").textContent = text;
+    byId("tutorial-back").hidden = !tutorialStep;
+    byId("tutorial-next").textContent = staticText[tutorialStep === tutorialTargets.length - 1 ? "tutorialDone" : "tutorialNext"][language === "uk" ? 1 : 0];
+  }
+  window.dispatchEvent(new Event("mission-change"));
+  if (navigate) {
+    if (target) byId(target).scrollIntoView({ block: "nearest" });
+    else byId("guide").focus();
+  }
 }
 
 function renderHUD() {
@@ -118,9 +141,21 @@ function renderHUD() {
     air: copy.systemState(state.airOn && state.powered),
     water: copy.systemState(state.waterOn && state.powered),
     food: copy.foodETA(formatTime(foodSeconds)),
-    crop: Number.isFinite(cropETA) ? copy.cropETA(formatTime(cropETA)) : harvests ? copy.harvestNote(harvests) : copy.noHarvest,
+    crop: state.toxins > 0 ? copy.campaign.growthLocked : Number.isFinite(cropETA) ? copy.cropETA(formatTime(cropETA)) : harvests ? copy.harvestNote(harvests) : copy.noHarvest,
     radiation: exposure ? copy.exposureNow(decimal(exposure, 2)) : phase === "warning" ? copy.radiationExpected : copy.noExposure
   };
+  const solCount = byId("sol-count");
+  solCount.hidden = !started;
+  solCount.textContent = copy.campaign.sol(Mission.currentSol(state), Mission.totalSols);
+  const toxinGoal = byId("toxins-goal");
+  toxinGoal.hidden = state.breach === "intact";
+  toxinGoal.textContent = state.toxins > 0 ? copy.campaign.toxins(Math.ceil(state.toxins)) : copy.campaign.clean;
+  toxinGoal.dataset.done = String(state.toxins === 0);
+  const landingGoal = byId("beacon-goal");
+  landingGoal.hidden = state.time < state.scenario.beaconStart;
+  landingGoal.textContent = Mission.beaconReady(state) ? copy.campaign.signalReady : copy.campaign.signalNeeded;
+  landingGoal.dataset.done = String(Mission.beaconReady(state));
+  byId("terrain").dataset.beacon = String(Mission.beaconReady(state));
 
   for (const key of resources) {
     const meter = meters[key];
@@ -167,6 +202,9 @@ function missionExplanation() {
     else if (state.stormSheltered >= 1) lessons.push(copy.shelterResult(formatTime(state.stormSheltered), formatTime(state.stormVentilated)));
   }
   if (Number.isFinite(firstHarvest)) lessons.push(copy.firstHarvest(formatTime(firstHarvest)));
+  if (state.clearedAt !== null) lessons.push(copy.campaign.cleanResult(formatTime(state.clearedAt)));
+  if (state.analyzed.includes("ridge")) lessons.push(copy.campaign.filterResult);
+  if (!state.failure) lessons.push(copy.campaign.signalResult);
   if (state.failure) {
     const outage = state.outage >= 1 ? formatTime(state.outage) : "";
     const systemsOff = state.failure === "air" ? state.scrubberOff : state.recyclerOff;
@@ -183,8 +221,13 @@ function missionExplanation() {
 function renderDebrief() {
   const key = radioKey();
   const current = score();
-  byId("outcome-title").textContent = copy.brief[key][0];
-  byId("outcome-text").textContent = state.failure ? copy.failures[state.failure] : copy.brief[key][1];
+  byId("outcome-title").textContent = state.failure ? copy.brief[key][0] : copy.campaign.rescueTitle;
+  byId("outcome-text").textContent = state.failure ? (copy.campaign.failures[state.failure] || copy.failures[state.failure]) : copy.campaign.rescue;
+  const rank = byId("outcome-rank");
+  rank.hidden = Boolean(state.failure);
+  const promotion = current.harvests === 2 && state.analyzed.includes("ridge") && state.sensor === "installed" ? 2 :
+    state.outage < 1 && state.radiation < 8 ? 1 : 0;
+  rank.textContent = copy.campaign.rank(copy.campaign.ranks[promotion]);
   const [first, second] = state.trays;
   const faster = first.harvestedAt < second.harvestedAt ? 0 : 1;
   const energyGap = state.trays[faster].energy - state.trays[1 - faster].energy;
@@ -231,7 +274,7 @@ function togglePause() {
 }
 
 function startMission() {
-  if (started || !canLaunch()) return;
+  if (started || !canLaunch() || tutorialStep < tutorialTargets.length) return;
   started = true;
   paused = false;
   lastFrame = performance.now();
@@ -275,6 +318,7 @@ function resetMission(id) {
   started = finished = paused = false;
   displayedHarvests = foodNoticeUntil = 0;
   byId("field-hint").open = false;
+  byId("report-log").open = false;
   syncPause();
   renderHUD();
   window.dispatchEvent(new Event("mission-reset"));
@@ -314,15 +358,24 @@ byId("missions").addEventListener("click", () => {
   byId("picker-note").textContent = copy.unlockNote;
   byId("mission-picker").showModal();
 });
-byId("language").addEventListener("change", ({ target }) => {
+function switchLanguage({ target }) {
   language = target.value;
   copy = languages[language];
   try { localStorage.setItem("sol-5111-language", language); } catch {}
   applyLanguage(language);
   syncPause();
   renderHUD();
+  renderTutorial();
   window.dispatchEvent(new Event("mission-language"));
+}
+for (const id of ["language", "briefing-language"]) byId(id).addEventListener("change", switchLanguage);
+byId("briefing").addEventListener("close", () => {
+  renderTutorial(true);
+  byId("tutorial-next").focus({ preventScroll: true });
 });
+byId("tutorial-next").addEventListener("click", () => { tutorialStep += 1; renderTutorial(true); });
+byId("tutorial-back").addEventListener("click", () => { tutorialStep -= 1; renderTutorial(true); });
+byId("tutorial-skip").addEventListener("click", () => { tutorialStep = tutorialTargets.length; renderTutorial(true); });
 document.addEventListener("keydown", (event) => {
   if (event.code !== "Space" || event.repeat || restartDialog.open || event.target.closest("button, input, select, textarea, a, summary")) return;
   event.preventDefault();
@@ -338,4 +391,5 @@ byId("edit-avatar").addEventListener("click", () => {
 applyLanguage(language);
 syncPause();
 renderHUD();
+byId("briefing").showModal();
 requestAnimationFrame(tick);

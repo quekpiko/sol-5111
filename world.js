@@ -12,7 +12,8 @@ const stations = {
   shelter: { x: 84, y: 85, label: "stationShelter", inside: true, area: "64% 76%, 68% 63%, 81% 60%, 91% 68%, 93% 78%, 85% 86%, 73% 88%" },
   storage: { x: 31, y: 84, label: "stationStorage", area: "7% 73%, 13% 63%, 26% 58%, 32% 66%, 29% 82%, 18% 89%, 8% 86%" },
   ridge: { x: 15, y: 22, label: "stationRidge", sample: true },
-  basin: { x: 67, y: 59, label: "stationBasin", sample: true }
+  basin: { x: 67, y: 59, label: "stationBasin", sample: true },
+  beacon: { x: 54, y: 84, label: "stationBeacon" }
 };
 const markers = [...terrain.querySelectorAll("[data-station]")];
 const sites = new Map();
@@ -33,7 +34,7 @@ function stationLabel(id) {
 
 const fieldHint = byId("field-hint");
 let drawnReadings = null;
-const prepItems = ["greenhouse", "battery", "sensor"].map((id) => {
+const prepItems = ["greenhouse", "battery", "sensor", "regolith"].map((id) => {
   const item = document.createElement("li");
   const button = document.createElement("button");
   button.type = "button";
@@ -44,50 +45,79 @@ const prepItems = ["greenhouse", "battery", "sensor"].map((id) => {
   item.append(button);
   byId("setup-list").append(item);
   button.addEventListener("click", () => {
-    const target = id === "greenhouse" ? id : state[id === "battery" ? "pack" : id] === "storage" ? "storage" : "solar";
+    const target = id === "greenhouse" ? id : id === "regolith" ? regolithTarget() :
+      state[id === "battery" ? "pack" : id] === "storage" ? "storage" : "solar";
     walkTo(target);
   });
   return { id, button, title, description };
 });
 
+function regolithTarget() {
+  return state.samples.includes("basin") ? "habitat" : "basin";
+}
+
 function updateSetup() {
-  byId("setup").hidden = started;
-  if (started) return;
+  byId("setup").hidden = started || tutorialStep < 2;
+  if (byId("setup").hidden) return;
   for (const { id, button, title, description } of prepItems) {
-    const stage = id === "greenhouse" ? canLaunch() ? "ready" : "required" : state[id === "battery" ? "pack" : id];
-    title.textContent = copy.setupSteps[id].title;
-    description.textContent = copy.setupSteps[id][stage];
-    button.dataset.done = String(["ready", "connected", "installed"].includes(stage));
+    const step = id === "regolith" ? copy.campaign.regolithPrep : copy.setupSteps[id];
+    const stage = id === "greenhouse" ? canLaunch() ? "ready" : "required" : id === "regolith" ?
+      state.lab?.sample === "basin" ? "queued" : state.samples.includes("basin") ? "carried" : "missing" :
+      state[id === "battery" ? "pack" : id];
+    title.textContent = step.title;
+    description.textContent = step[stage];
+    button.dataset.done = String(["ready", "connected", "installed", "queued"].includes(stage));
   }
 }
 
 function guideTarget() {
   const phase = phaseKey();
   if (phase === "ready") return canLaunch() ? "" : "greenhouse";
-  if (phase === "warning" && !state.shelter) return "shelter";
-  if (phase === "dust" && state.mission === "training") return state.pack === "carried" ? "solar" : "greenhouse";
-  if (!fieldHint.open || state.mission === "extended") return "";
-  if (phase === "prepare") return state.sensor === "storage" ? "storage" : "solar";
+  if (state.shelter) return "";
   if (phase === "warning" || phase === "shelter") return "shelter";
-  if (phase === "recover") return hasHarvest() && state.samples.length ? "habitat" : "greenhouse";
+  if (state.breach === "open") return "greenhouse";
+  if (state.toxins > 0 && !state.analyzed.includes("basin")) return regolithTarget();
+  if (state.toxins > 0 && !state.decon) return "greenhouse";
+  if (phase === "beacon") return Mission.beaconReady(state) ? "" : "beacon";
+  if (phase === "dust" && state.mission === "training") return state.pack === "carried" ? "solar" : "greenhouse";
+  if (phase === "prepare" && !state.analyzed.includes("basin") && state.lab?.sample !== "basin") return regolithTarget();
   return "";
 }
 
-function updateWorld() {
-  const key = radioKey();
-  const phase = phaseKey();
-  byId("mission-radio").dataset.event = phase;
+function updateRadio(phase) {
+  const sol = Mission.currentSol(state);
+  const key = started && !finished ? `sol-${sol}` : radioKey();
+  const log = byId("report-log");
+  log.hidden = !started || sol === 1;
   if (key !== radio) {
     radio = key;
-    byId("mission-name").textContent = copy.missions[state.mission].name;
-    const [title, body] = copy.brief[key];
+    const daily = started && !finished;
+    const [title, body] = daily ? copy.campaign.reports[sol - 1] : copy.brief[key];
+    byId("mission-name").textContent = daily ? copy.campaign.orbital(sol) : copy.missions[state.mission].name;
     byId("radio-title").textContent = title;
-    byId("radio-message").textContent = key === "ready" ? copy.missions[state.mission].intro : body;
-    byId("field-hint-text").textContent = (state.mission === "extended" ? copy.hardHints : copy.hints)[phase] || "";
+    byId("radio-message").textContent = key === "ready" ? copy.campaign.setupIntro : body;
+    const reports = byId("report-list");
+    reports.replaceChildren();
+    if (started) for (const [heading, text] of copy.campaign.reports.slice(0, sol - 1)) {
+      const item = document.createElement("li");
+      const label = document.createElement("strong");
+      label.textContent = heading;
+      item.append(label, document.createTextNode(` · ${text}`));
+      reports.append(item);
+    }
   }
+  const hint = copy.campaign.phaseHints[phase] || (state.mission === "extended" ? copy.hardHints : copy.hints)[phase] || "";
+  byId("field-hint-text").textContent = hint;
+}
+
+function updateWorld() {
+  const phase = phaseKey();
+  byId("mission-radio").dataset.event = phase;
+  updateRadio(phase);
   updateSetup();
-  fieldHint.hidden = finished;
-  byId("missions").hidden = started && !finished;
+  const learning = tutorialStep < tutorialTargets.length;
+  fieldHint.hidden = finished || learning;
+  byId("missions").hidden = learning || (started && !finished);
   byId("missions").textContent = copy.missionMenu;
   terrain.dataset.lighting = state.powered ? state.trays.reduce((level, tray) =>
     tray.harvestedAt !== null ? level : Math.max(level, ["off", "dim", "full"].indexOf(tray.light)), 0) : 0;
@@ -102,14 +132,15 @@ function updateWorld() {
   const target = guideTarget();
   for (const marker of markers) {
     const id = marker.dataset.station;
-    marker.dataset.target = String(id === target);
+    marker.hidden = id === "beacon" && state.time < state.scenario.beaconStart;
+    marker.dataset.target = String(id === target && !learning);
     sites.get(id).dataset.moving = String(id === destination?.station);
   }
   const route = destination?.station ? copy.walking(byId("field-name").textContent, stationLabel(destination.station)) : "";
   const routeLabel = byId("map-route");
   routeLabel.hidden = !route;
   if (routeLabel.textContent !== route) routeLabel.textContent = route;
-  guideButton.hidden = started && !finished && !target;
+  guideButton.hidden = learning || (started && !finished && !target);
   guideButton.textContent = finished ? copy.outcome : !started ?
     canLaunch() ? copy.start(formatTime(state.scenario.duration)) : copy.openGreenhouse :
     target ? `${copy.guide} · ${stationLabel(target)}` : "";
@@ -118,6 +149,7 @@ function updateWorld() {
   let nameOverlaps = false;
   nearby = "";
   for (const [id, point] of Object.entries(stations)) {
+    if (id === "beacon" && state.time < state.scenario.beaconStart) continue;
     const distance = Math.hypot((position.x - point.x) * rect.width / 100, (position.y - point.y) * rect.height / 100);
     if (distance < 55) nameOverlaps = true;
     if (distance <= best) {
@@ -128,11 +160,12 @@ function updateWorld() {
   player.dataset.nearStation = String(nameOverlaps);
   const actionLabel = nearby && stations[nearby].inside ? copy.enter : copy.inspect;
   interactButton.textContent = nearby ? `${actionLabel} · ${stationLabel(nearby)}` : copy.standby;
-  interactButton.disabled = !nearby || Boolean(destination);
+  interactButton.disabled = !nearby || Boolean(destination) || state.shelter;
   if (room.open && currentRoom) refreshRoom();
 }
 
 function walk(point, station = "") {
+  if (finished || state.shelter || document.querySelector("dialog[open]")) return;
   keys.clear();
   destination = { x: point.x, y: point.y, station };
   terrain.focus({ preventScroll: true });
@@ -146,6 +179,12 @@ function walkTo(station) {
 function positionPlayer() {
   player.style.left = `${position.x}%`;
   player.style.top = `${position.y}%`;
+}
+
+function faceTravel(dx, dy) {
+  const direction = Math.abs(dy) > Math.abs(dx) ? dy < 0 ? "up" : "down" : "side";
+  player.dataset.direction = direction;
+  player.style.setProperty("--facing", direction === "side" && dx < 0 ? "-1" : "1");
 }
 
 function animate(now) {
@@ -165,6 +204,7 @@ function animate(now) {
   }
   const distance = Math.hypot(dx, dy);
   const step = elapsed * (destination ? 630 : 290);
+  if (distance) faceTravel(dx, dy);
   if (destination && distance <= step) {
     const { x, y, station } = destination;
     position = { x, y };
@@ -174,7 +214,6 @@ function animate(now) {
   } else if (distance && rect.width && rect.height) {
     position.x = Math.max(3, Math.min(97, position.x + dx / distance * step * 100 / rect.width));
     position.y = Math.max(3, Math.min(97, position.y + dy / distance * step * 100 / rect.height));
-    if (dx) player.style.setProperty("--facing", dx < 0 ? "-1" : "1");
   }
   player.dataset.walking = String(Boolean(distance));
   positionPlayer();
@@ -205,9 +244,9 @@ function buildRoom() {
   byId("room-title").textContent = stationLabel(id);
   byId("room-view").dataset.room = stations[id].inside ? id : "";
   byId("room-view").hidden = !stations[id].inside;
-  byId("room-detail").textContent = copy.room[id];
-  byId("room-hint-text").textContent = copy.roomHint[id];
-  byId("room-power").hidden = id !== "greenhouse" && id !== "solar";
+  byId("room-detail").textContent = id === "beacon" ? copy.campaign.beaconRoom : copy.room[id];
+  byId("room-hint-text").textContent = id === "beacon" ? copy.campaign.phaseHints.beacon : copy.roomHint[id];
+  byId("room-power").hidden = id !== "greenhouse" && id !== "solar" && id !== "beacon";
   byId("room-feedback").textContent = "";
   byId("room-controls").replaceChildren();
   byId("room-trays").hidden = id !== "greenhouse";
@@ -216,6 +255,8 @@ function buildRoom() {
   drawnReadings = null;
 
   if (id === "greenhouse") {
+    addControl(copy.campaign.seal, () => Mission.sealGreenhouse(state), "seal");
+    addControl(copy.campaign.decon, () => Mission.toggleDecon(state), "decon");
     state.trays.forEach((_, index) => {
       const panel = document.createElement("section");
       panel.className = "tray";
@@ -247,12 +288,17 @@ function buildRoom() {
   } else if (id === "habitat") {
     addControl(copy.air, () => { state.airOn = !state.airOn; }, "air");
     addControl(copy.water, () => { state.waterOn = !state.waterOn; }, "water");
-    addControl(copy.lab, () => {
-      const sample = state.samples.find((item) => !state.analyzed.includes(item));
-      if (sample && !state.lab) state.lab = { sample, remaining: 16 };
-    }, "lab");
+    for (const sample of ["basin", "ridge"]) {
+      addControl(copy.campaign.analyze[sample], () => { state.lab = { sample, remaining: 16 }; }, `lab-${sample}`);
+    }
   } else if (id === "shelter") {
-    addControl(copy.ventilation, () => { state.shelter = !state.shelter; }, "shelter");
+    addControl(copy.ventilation, () => {
+      state.shelter = !state.shelter;
+      keys.clear();
+      destination = null;
+    }, "shelter");
+  } else if (id === "beacon") {
+    addControl(copy.campaign.beaconToggle, () => Mission.toggleBeacon(state), "beacon");
   } else if (id === "storage") {
     addControl(copy.pick, () => { state.pack = "carried"; byId("room-feedback").textContent = copy.feedback.pick; }, "pack");
     addControl(copy.pickSensor, () => { state.sensor = "carried"; byId("room-feedback").textContent = copy.sensorPicked; }, "sensor");
@@ -344,12 +390,12 @@ function refreshTrays() {
         copy.peakCharge(Number.isFinite(goal.batterySeconds) ? formatTime(goal.batterySeconds) : copy.charge);
       const harvestDelta = timeDifference(peak.harvestSeconds[index], eta);
       const batteryDelta = timeDifference(peak.batterySeconds, goal.batterySeconds);
-      const change = [];
+      const change = [copy.campaign.draw(decimal(goal.load - forecast(state, current.solar, index, "off").load, 2))];
       if (harvestDelta) change.push(copy.harvestDelta(harvestDelta, eta < peak.harvestSeconds[index]));
       if (!Number.isFinite(peak.harvestSeconds[index]) && Number.isFinite(eta)) change.push(copy.startsGrowth);
       if (batteryDelta) change.push(copy.chargeDelta(batteryDelta, goal.batterySeconds > peak.batterySeconds));
       if (current.net >= 0 && live.net < 0) change.push(copy.startsDischarge);
-      button.querySelector(".tray-change").textContent = done || selected ? "" : change.join(" · ");
+      button.querySelector(".tray-change").textContent = done ? "" : (selected ? change.slice(0, 1) : change).join(" · ");
     }
   }
   const feedback = byId("room-feedback");
@@ -359,10 +405,10 @@ function refreshTrays() {
 function refreshRoom() {
   const energy = forecast(state);
   const phase = phaseKey();
-  const alert = copy.roomAlerts[phase];
+  const alert = phase === "breach" ? copy.campaign.breachAlert : copy.roomAlerts[phase];
   const banner = byId("room-alert");
   banner.hidden = !alert;
-  banner.dataset.event = phase === "dust" ? "dust" : "particles";
+  banner.dataset.event = phase === "breach" || phase === "dust" ? "dust" : "particles";
   byId("room-alert-title").textContent = alert || "";
   byId("room-alert-time").textContent = eventCountdown();
   const powerChoice = byId("room-power-choice");
@@ -377,38 +423,56 @@ function refreshRoom() {
     byId("room-power").textContent = copy.power(decimal(energy.generation), decimal(energy.load), decimal(state.reserve),
       copy.relativeSolar(Mission.solarPercent(energy.solar)));
   }
+  const campaign = copy.campaign;
+  const toxins = byId("greenhouse-alert");
+  toxins.hidden = currentRoom !== "greenhouse" || state.breach === "intact";
+  if (!toxins.hidden) toxins.textContent = state.toxins > 0 ? campaign.toxinsStatus(
+    Math.ceil(state.toxins), state.breach === "open", state.decon ? formatTime(state.toxins / Mission.deconRate) : ""
+  ) : campaign.clean;
+  byId("room-view").dataset.contaminated = String(currentRoom === "greenhouse" && state.toxins > 0);
+  byId("room-exit").disabled = state.shelter;
   for (const button of byId("room-controls").querySelectorAll("button")) {
     const key = button.dataset.control;
     const line = button.querySelector("small");
-    if (["air", "water", "shelter"].includes(key)) {
-      const active = state[key === "shelter" ? key : key + "On"];
-      line.textContent = active && !state.powered ? copy.noPower : copy.systemState(active);
-      if (key === "shelter") {
-        const outside = forecast({ ...state, shelter: false });
-        const inside = forecast({ ...state, shelter: true });
-        line.textContent = copy.shelterTradeoff(decimal(exposureRate({ shelter: false }), 2),
-          decimal(exposureRate({ shelter: true }), 2), decimal(inside.load - outside.load, 2));
-      }
+    const draw = (system) => decimal(Mission.systemDraw(state, system), 2);
+    if (key === "air" || key === "water") {
+      const active = state[`${key}On`];
+      line.textContent = campaign.lifeSupport[key](draw(key), active);
       button.setAttribute("aria-pressed", String(active));
-    } else if (key === "lab") {
-      button.disabled = Boolean(state.lab) || state.samples.length === state.analyzed.length;
-      line.textContent = state.lab ? !started ? copy.labBeforeStart :
-        `${paused ? copy.labPaused : state.powered ? copy.feedback.queued : copy.noPower} · ${formatTime(state.lab.remaining)}`
-        : state.analyzed.length ? copy.feedback.sampleDone : "";
-    } else if (key === "pack") {
-      button.disabled = state.pack !== "storage";
-      line.textContent = button.disabled ? copy.cargoTaken : "";
-    } else if (key === "connect") {
-      button.disabled = state.pack !== "carried";
-      line.textContent = state.pack === "connected" ? copy.connected : button.disabled ? copy.batteryAtStorage : "";
-    } else if (key === "sensor") {
-      button.disabled = state.sensor !== "storage";
-      line.textContent = button.disabled ? copy.cargoTaken : "";
-    } else if (key === "install") {
-      button.disabled = state.sensor !== "carried";
-      line.textContent = state.sensor === "installed" ? copy.sensorOnline : button.disabled ? copy.sensorAtStorage : "";
-    } else if (key === "sample") {
-      button.disabled = state.samples.includes(currentRoom) || phaseKey() === "shelter";
+    } else if (key === "shelter") {
+      button.querySelector("strong").textContent = state.shelter ? campaign.leaveShelter : copy.ventilation;
+      line.textContent = state.shelter ? campaign.unshield(draw("shelter")) : campaign.shield(draw("shelter"));
+    } else if (key.startsWith("lab-")) {
+      const sample = key.slice(4);
+      const complete = state.analyzed.includes(sample);
+      button.disabled = Boolean(state.lab) || complete || !state.samples.includes(sample);
+      let status = !state.samples.includes(sample) ? campaign.needSample : complete ? copy.feedback.sampleDone : "";
+      if (state.lab?.sample === sample) {
+        status = !started ? copy.labBeforeStart :
+          `${paused ? copy.labPaused : state.powered ? copy.feedback.queued : copy.noPower} · ${formatTime(state.lab.remaining)}`;
+      }
+      line.textContent = [campaign.labCost(draw("lab"), sample), status].filter(Boolean).join(" · ");
+    } else if (key === "seal") {
+      button.hidden = state.breach !== "open";
+      line.textContent = campaign.sealCost;
+    } else if (key === "decon") {
+      button.hidden = state.toxins === 0;
+      button.disabled = state.breach !== "sealed" || !state.analyzed.includes("basin");
+      button.querySelector("strong").textContent = state.decon ? campaign.pauseDecon : campaign.decon;
+      const status = state.breach === "open" ? campaign.needSeal : !state.analyzed.includes("basin") ? campaign.needFormula : "";
+      line.textContent = [campaign.deconCost(draw("decon")), status].filter(Boolean).join(" · ");
+    } else if (key === "beacon") {
+      button.querySelector("strong").textContent = state.beaconOn ? campaign.stopBeacon : campaign.beaconToggle;
+      line.textContent = campaign.beaconCost(draw("beacon"), Mission.beaconLockSeconds);
+      byId("room-feedback").textContent = Mission.beaconReady(state) ? campaign.signalReady :
+        state.beaconOn ? campaign.signalProgress(formatTime(Mission.beaconLockSeconds - state.beaconSignal)) : campaign.signalNeeded;
+    } else {
+      if (key === "pack") button.disabled = state.pack !== "storage";
+      if (key === "connect") button.disabled = state.pack !== "carried";
+      if (key === "sensor") button.disabled = state.sensor !== "storage";
+      if (key === "install") button.disabled = state.sensor !== "carried";
+      if (key === "sample") button.disabled = state.samples.includes(currentRoom);
+      line.textContent = campaign.fieldActions[key];
     }
   }
   if (currentRoom === "greenhouse") {
@@ -422,7 +486,7 @@ function refreshRoom() {
 }
 
 function enter(station) {
-  if (finished || room.open || document.querySelector("dialog[open]")) return;
+  if (finished || state.shelter || document.querySelector("dialog[open]")) return;
   keys.clear();
   currentRoom = station;
   byId("room-hint").open = false;
@@ -455,8 +519,9 @@ terrain.addEventListener("click", (event) => {
   const rect = terrain.getBoundingClientRect();
   walk({ x: (event.clientX - rect.left) * 100 / rect.width, y: (event.clientY - rect.top) * 100 / rect.height });
 });
-terrain.addEventListener("keydown", (event) => {
-  if (event.target !== terrain) return;
+window.addEventListener("keydown", (event) => {
+  if (finished || state.shelter || document.querySelector("dialog[open]") ||
+    event.target.closest?.("input, select, textarea, [contenteditable]")) return;
   if (event.code === "KeyE" && nearby && !destination) enter(nearby);
   if (!movement[event.code]) return;
   event.preventDefault();
@@ -464,12 +529,14 @@ terrain.addEventListener("keydown", (event) => {
   keys.add(event.code);
   if (!event.repeat) {
     const [dx, dy] = movement[event.code];
+    faceTravel(dx, dy);
     position.x = Math.max(3, Math.min(97, position.x + dx * .6));
     position.y = Math.max(3, Math.min(97, position.y + dy * .6));
+    positionPlayer();
   }
 });
 window.addEventListener("keyup", (event) => keys.delete(event.code));
-terrain.addEventListener("blur", () => keys.clear());
+window.addEventListener("blur", () => keys.clear());
 interactButton.addEventListener("click", () => { if (nearby && !destination) enter(nearby); });
 guideButton.addEventListener("click", () => {
   if (finished) {
@@ -482,6 +549,7 @@ guideButton.addEventListener("click", () => {
     if (target) walkTo(target);
   }
 });
+room.addEventListener("cancel", (event) => { if (state.shelter) event.preventDefault(); });
 room.addEventListener("close", () => {
   if (room.open) return;
   currentRoom = "";
@@ -498,6 +566,9 @@ window.addEventListener("mission-reset", () => {
   destination = null;
   keys.clear();
   position = { ...spawn };
+  player.dataset.direction = "down";
+  player.style.removeProperty("--facing");
+  if (!room.open) currentRoom = "";
   positionPlayer();
   updateWorld();
 });

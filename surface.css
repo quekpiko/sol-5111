@@ -223,7 +223,7 @@ dialog#interior { width: min(710px, calc(100% - 22px)); }
 
 .setup { margin-bottom: 9px; }
 .setup h3 { margin-bottom: 5px; color: var(--amber); font: 700 .81rem var(--mono); }
-.setup ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; list-style: none; padding: 0; margin: 0; }
+.setup ul { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; list-style: none; padding: 0; margin: 0; }
 .setup-step {
   position: relative; width: 100%; height: 100%; border: 1px solid #806a49; padding: 7px 7px 7px 27px;
   color: var(--ink); background: #272017; border-radius: 4px; text-align: start;
@@ -301,4 +301,92 @@ body:has(#setup:not([hidden])) .terrain { height: clamp(320px, calc(100svh - 413
   .meter small { font-size: .68rem; }
   .mission-bar nav { flex-wrap: wrap; }
   .tray-controls button > strong { flex-wrap: wrap; }
+}
+
+#briefing { width: min(660px, calc(100% - 22px)); }
+#briefing .drawer-head h2 { font-size: clamp(1.4rem, 4vw, 2rem); }
+.briefing-story {
+  padding: 14px;
+  margin: 8px 0 12px;
+  border: 1px solid #9b7549;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #281d14f5 15%, #281d14bf), url("assets/outpost.jpg") 50% 39% / cover;
+}
+.briefing-story h3 { margin-bottom: 5px; color: #ffe3b7; font-size: 1rem; }
+.briefing-story p { color: #f3e9d8; }
+.briefing-history ul, #report-list { margin: 0 0 9px; padding: 0 13px 0 29px; font-size: .82rem; color: #e0d2bc; }
+.briefing-history li + li, #report-list li + li { margin-top: 6px; }
+.tutorial {
+  position: sticky;
+  top: 4px;
+  z-index: 9;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+  padding: 10px 12px;
+  margin: 8px 0 10px;
+  border: 1px solid #e6bb7c;
+  border-radius: 5px;
+  background: #272016;
+  box-shadow: 0 5px 16px #0d0a08aa;
+}
+.tutorial h2 { font-size: 1.18rem; margin-bottom: 3px; }
+.tutorial p:not(.eyebrow) { color: #ead7bc; font-size: .86rem; max-width: 66ch; }
+.tutorial .action-row { flex-shrink: 0; }
+body:is([data-tutorial="terrain"],[data-tutorial="hud"],[data-tutorial="setup"]) :is(#mission-radio,#mission-status) { display: none; }
+body[data-tutorial="terrain"] #terrain,
+body[data-tutorial="hud"] #hud,
+body[data-tutorial="setup"] #setup {
+  outline: 2px solid #f7c677;
+  outline-offset: -2px;
+  scroll-margin-top: 126px;
+}
+body[data-tutorial="setup"] #setup { padding: 8px; }
+body[data-tutorial="terrain"] #hud,
+body[data-tutorial="hud"] #terrain,
+body[data-tutorial="setup"] .viewport { opacity: .48; }
+body[data-tutorial="hud"] #terrain { height: clamp(210px, 37svh, 350px); }
+#sol-count { color: #24170d; background: var(--amber); padding: 3px 6px; border-radius: 3px; white-space: nowrap; }
+.terrain[data-phase="breach"] .weather, .terrain[data-phase="beacon"] .weather { box-shadow: inset 0 0 130px #b35b3575; }
+.contamination, #toxins-goal[data-done="false"] { color: #ffddba; background: #522916; border-color: #df9c6b; }
+#room-view[data-contaminated="true"] { position: relative; overflow: hidden; filter: none; }
+#room-view[data-contaminated="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  background: repeating-linear-gradient(155deg, #a24b3488, #dc80404d 18px, #4e271a54 65px);
+  animation: dust 5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.terrain[data-beacon="true"] [data-station="beacon"] { border-color: #95cba5; color: #e0f8dc; background: #24402f; }
+.terrain[data-beacon="true"] [data-station="beacon"] i { background: #b3f0bd; box-shadow: 0 0 9px #b3f0bd; }
+#outcome-rank {
+  margin-top: 9px;
+  padding: 5px 9px;
+  width: fit-content;
+  color: #1d160d;
+  background: var(--amber);
+  border-radius: 3px;
+  font-weight: 750;
+}
+.player[data-direction="up"] :is(.visor, .patch) { visibility: hidden; }
+.player[data-direction="up"] .astronaut::after {
+  content: "";
+  position: absolute;
+  inset: 36% 29% 31%;
+  z-index: 1;
+  border: 1px solid #5d4835;
+  border-radius: 23%;
+  background: repeating-linear-gradient(0deg, #625b4d 0 3px, #746957 3px 5px);
+}
+.player[data-direction="side"] .visor { inset-inline: 36% 3%; }
+@media (max-width: 660px) {
+  .tutorial { flex-wrap: wrap; align-items: start; }
+  .tutorial .action-row { flex-shrink: 1; }
+  .clock { gap: 5px; letter-spacing: 0; line-height: 1.2; }
+  .mission-bar h1 { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #room-view[data-contaminated="true"]::after { animation: none; }
 }

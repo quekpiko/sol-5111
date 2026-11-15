@@ -6,18 +6,18 @@
   <meta name="description" content="A real-time Mars outpost story inspired by NASA observations." data-i18n-content="description">
   <meta name="theme-color" content="#161712">
   <title>Sol 5111 — Mars Mission Trainer</title>
-  <link rel="stylesheet" href="style.css?v=field-2">
-  <link rel="stylesheet" href="surface.css?v=field-3">
-  <script src="engine.js?v=field-3" defer></script>
-  <script src="languages.js?v=field-3" defer></script>
-  <script src="game.js?v=field-3" defer></script>
+  <link rel="stylesheet" href="style.css?v=seven-sols-1">
+  <link rel="stylesheet" href="surface.css?v=seven-sols-1">
+  <script src="engine.js?v=seven-sols-1" defer></script>
+  <script src="languages.js?v=seven-sols-1" defer></script>
+  <script src="game.js?v=seven-sols-1" defer></script>
   <script src="avatar.js?v=field-2" defer></script>
-  <script src="world.js?v=field-3" defer></script>
+  <script src="world.js?v=seven-sols-1" defer></script>
 </head>
 <body>
   <header class="mission-bar">
     <h1>SOL <span>5111</span></h1>
-    <div class="clock"><span id="phase"></span><strong id="mission-clock">00:00</strong></div>
+    <div class="clock"><b id="sol-count" hidden></b><span id="phase"></span><strong id="mission-clock">00:00</strong></div>
     <nav aria-label="Mission">
       <button class="secondary" id="pause" type="button" disabled></button>
       <button class="secondary restart-link" id="restart" type="button" data-i18n="restart" hidden>Restart mission</button>
@@ -27,6 +27,14 @@
     </nav>
   </header>
   <main class="game">
+    <section class="tutorial" id="tutorial" aria-labelledby="tutorial-title" hidden>
+      <div><p class="eyebrow" id="tutorial-step"></p><h2 id="tutorial-title"></h2><p id="tutorial-text"></p></div>
+      <div class="action-row">
+        <button class="secondary" id="tutorial-skip" type="button" data-i18n="tutorialSkip">Skip tutorial</button>
+        <button class="secondary" id="tutorial-back" type="button" data-i18n="tutorialBack">Back</button>
+        <button class="primary" id="tutorial-next" type="button" data-i18n="tutorialNext">Next</button>
+      </div>
+    </section>
     <section class="radio" id="mission-radio" aria-labelledby="radio-title">
       <div class="radio-copy">
         <p class="eyebrow" id="mission-name"></p>
@@ -39,6 +47,7 @@
         <button class="primary" id="guide" type="button"></button>
       </div>
     </section>
+    <details class="hint-drawer" id="report-log" hidden><summary data-i18n="reportLog">Previous orbital reports</summary><ol id="report-list"></ol></details>
     <section class="setup" id="setup" aria-labelledby="setup-title">
       <h3 id="setup-title" data-i18n="setup">Before you start</h3>
       <ul id="setup-list"></ul>
@@ -46,13 +55,15 @@
     <div class="mission-status" id="mission-status">
       <span id="harvest-goal" role="status"></span>
       <span id="crew-status"></span>
+      <span id="toxins-goal" hidden></span>
+      <span id="beacon-goal" hidden></span>
     </div>
     <details class="hint-drawer" id="field-hint"><summary data-i18n="hint">Hint</summary><p id="field-hint-text"></p></details>
     <section class="viewport" aria-label="Mars outpost" data-i18n-aria-label="mapLabel">
       <div class="terrain" id="terrain" tabindex="0" aria-describedby="map-help">
         <div class="surface-art" aria-hidden="true"></div>
         <div class="weather" aria-hidden="true"></div>
-        <div class="player" id="field-player" aria-hidden="true">
+        <div class="player" id="field-player" data-direction="down" aria-hidden="true">
           <div class="astronaut" id="avatar-field"><span class="leg left"></span><span class="leg right"></span><div class="spacesuit"></div><div class="helmet"><span class="visor"></span></div><b class="patch">★</b></div>
           <span id="field-name"></span>
         </div>
@@ -65,6 +76,7 @@
         <button type="button" class="station" data-station="storage"><i aria-hidden="true"></i><span data-i18n="stationStorage">Storage</span></button>
         <button type="button" class="station" data-station="ridge"><i aria-hidden="true"></i><span data-i18n="stationRidge">Rock outcrop</span></button>
         <button type="button" class="station" data-station="basin"><i aria-hidden="true"></i><span data-i18n="stationBasin">Regolith site</span></button>
+        <button type="button" class="station" data-station="beacon" hidden><i aria-hidden="true"></i><span data-i18n="stationBeacon">Landing beacon</span></button>
         <div class="map-cargo" id="cargo" hidden></div>
         <div class="map-controls">
           <div class="crew">
@@ -79,18 +91,36 @@
     </section>
     <p class="map-help" id="map-help" data-i18n="mapHelp">Click a location or move with WASD. Press E at a module. Space pauses the simulation.</p>
   </main>
+  <dialog id="briefing" aria-labelledby="briefing-title">
+    <div class="drawer-head">
+      <div><p class="eyebrow" data-i18n="briefingEyebrow">SOL 5111 · SEVEN SOLS</p><h2 id="briefing-title" data-i18n="briefing">Mission briefing</h2></div>
+      <select class="language" id="briefing-language" aria-label="Language" data-i18n-aria-label="language"><option value="en" lang="en">English</option><option value="uk" lang="uk">Українська</option></select>
+    </div>
+    <div class="briefing-story"><h3 data-i18n="storyTitle">Fictional mission</h3><p data-i18n="storyBody"></p></div>
+    <details class="hint-drawer briefing-history" open>
+      <summary data-i18n="historyTitle">Real NASA observations</summary>
+      <ul>
+        <li><span data-i18n="historyOpportunity"></span> <a href="https://science.nasa.gov/resource/on-mars-light-is-energy/" target="_blank" rel="noopener">Opportunity ↗</a></li>
+        <li><span data-i18n="historyCuriosity"></span> <a href="https://www.jpl.nasa.gov/news/nasa-watches-mars-light-up-during-epic-solar-storm/" target="_blank" rel="noopener">Curiosity ↗</a></li>
+        <li><span data-i18n="historyPhoenix"></span> <a href="https://science.nasa.gov/mission/mars-phoenix/" target="_blank" rel="noopener">Phoenix ↗</a></li>
+      </ul>
+      <p><span data-i18n="historyMro"></span> <a href="https://science.nasa.gov/resource/mars-color-imager-marci-for-mars-reconnaissance-orbiter/" target="_blank" rel="noopener">MRO / MARCI ↗</a></p>
+    </details>
+    <form method="dialog"><button class="primary" data-i18n="briefingContinue" autofocus>Begin training</button></form>
+  </dialog>
   <dialog id="interior" aria-labelledby="room-title">
     <div class="room-header">
       <div class="drawer-head"><h2 id="room-title"></h2><div class="room-nav">
         <button class="secondary" id="room-pause" type="button"></button>
         <button class="secondary restart-link" id="room-restart" type="button" data-i18n="restart" hidden>Restart mission</button>
-        <form method="dialog"><button class="secondary" data-i18n="exitRoom" autofocus>Exit to map</button></form>
+        <form method="dialog"><button class="secondary" id="room-exit" data-i18n="exitRoom" autofocus>Exit to map</button></form>
       </div></div>
       <p id="room-alert" class="event-banner" hidden><strong id="room-alert-title"></strong><span id="room-alert-time"></span></p>
     </div>
     <div class="room-view" id="room-view" aria-hidden="true"></div>
     <p class="room-detail" id="room-detail"></p>
     <p class="room-detail" id="room-power" hidden></p>
+    <p id="greenhouse-alert" class="power-choice contamination" hidden></p>
     <p id="room-power-choice" class="power-choice" hidden></p>
     <div class="room-trays" id="room-trays" hidden></div>
     <section class="telemetry" id="telemetry" hidden>
@@ -117,6 +147,7 @@
   <dialog id="debrief" aria-labelledby="outcome-title">
     <div class="drawer-head"><h2 id="outcome-title"></h2><form method="dialog"><button class="secondary" data-i18n="exitRoom">Exit to map</button></form></div>
     <p id="outcome-text"></p>
+    <p id="outcome-rank" hidden></p>
     <ul id="outcome-explanation"></ul>
     <ul id="outcome-stats"></ul>
     <div class="action-row">
