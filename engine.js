@@ -53,7 +53,7 @@ const Mission = (() => {
       sensor: "storage", readings: [], nextReading: 0,
       lightCuts: [], outage: 0, scrubberOff: 0, recyclerOff: 0, stormSheltered: 0, stormVentilated: 0,
       breach: "intact", toxins: 0, decon: false, clearedAt: null,
-      beaconOn: false, beaconSignal: 0
+      beaconOn: false, beaconSignal: 0, waterShutdown: null, cleanupStartedAt: null
     };
   }
 
@@ -73,6 +73,7 @@ const Mission = (() => {
     return {
       solar, generation, load, net,
       batterySeconds: net < 0 ? (state.battery + state.reserve) / -net : Infinity,
+      mainBatterySeconds: net < 0 ? state.battery / -net : Infinity,
       foodSeconds: state.food / foodRate,
       harvestSeconds: state.trays.map((tray, index) => {
         const rate = lamps[index].growth / timeScale;
@@ -103,7 +104,24 @@ const Mission = (() => {
   }
 
   function toggleDecon(state) {
-    if (!state.shelter && state.breach === "sealed" && state.toxins > 0 && state.analyzed.includes("basin")) state.decon = !state.decon;
+    if (!state.shelter && state.breach === "sealed" && state.toxins > 0 && state.analyzed.includes("basin")) {
+      state.decon = !state.decon;
+      if (state.decon && state.cleanupStartedAt === null) state.cleanupStartedAt = state.time;
+    }
+  }
+
+  function toggleWater(state) {
+    if (state.waterOn && state.time >= state.scenario.beaconStart) {
+      state.waterShutdown = { time: state.time, savings: systemDraw(state, "water") };
+    }
+    state.waterOn = !state.waterOn;
+  }
+
+  function particleStatus(state) {
+    const { warning, particleStart, particleEnd } = state.scenario;
+    if (state.time >= particleEnd) return "ended";
+    if (state.time >= particleStart) return "active";
+    return state.time >= warning ? "expected" : "quiet";
   }
 
   function toggleBeacon(state) {
@@ -212,7 +230,7 @@ const Mission = (() => {
 
   return { spareCapacity, exposureLimit, peakDustSolar, totalSols, beaconLockSeconds, deconRate, scenarios, currentSol,
     solarAt, solarPercent, newState, forecast, systemDraw, exposureRate, setTrayLight, sealGreenhouse, toggleDecon,
-    toggleBeacon, beaconReady, recordReading, advance };
+    toggleBeacon, toggleWater, particleStatus, beaconReady, recordReading, advance };
 })();
 
 if (typeof module !== "undefined") module.exports = Mission;

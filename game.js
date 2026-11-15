@@ -19,6 +19,7 @@ let foodNoticeUntil = 0;
 const restartDialog = byId("restart-confirm");
 const tutorialTargets = ["terrain", "hud", "setup"];
 let tutorialStep = 0;
+let tutorialSelection = null;
 
 const meters = Object.fromEntries(resources.map((key) => {
   const element = document.createElement("div");
@@ -31,9 +32,11 @@ const meters = Object.fromEntries(resources.map((key) => {
     activity.className = "meter-activity";
     element.append(activity);
   }
+  const detail = key === "battery" ? document.createElement("small") : null;
+  if (detail) element.insertBefore(detail, activity);
   return [key, {
     element, label: element.querySelector("span"), value: element.querySelector("strong"),
-    gauge: element.querySelector("progress"), note: element.querySelector("small"), activity
+    gauge: element.querySelector("progress"), note: element.querySelector("small"), activity, detail
   }];
 }));
 
@@ -81,10 +84,35 @@ function decimal(value, digits = 1) {
 }
 
 function eventCountdown() {
-  const phase = phaseKey();
-  if (phase === "warning") return copy.particleCountdown(formatTime(state.scenario.particleStart - state.time));
-  if (phase === "shelter") return copy.particleRemaining(formatTime(state.scenario.particleEnd - state.time));
+  if (finished) return "";
+  const particles = Mission.particleStatus(state);
+  if (particles === "expected") return copy.particleCountdown(formatTime(state.scenario.particleStart - state.time));
+  if (particles === "active") return copy.particleRemaining(formatTime(state.scenario.particleEnd - state.time));
   return "";
+}
+
+function powerReadings(energy) {
+  return {
+    main: Number.isFinite(energy.mainBatterySeconds) ? formatTime(energy.mainBatterySeconds) : copy.charge,
+    spare: copy.panels.reserveValue(decimal(state.reserve))
+  };
+}
+
+function lightingLesson() {
+  return tutorialTargets[tutorialStep] === "hud";
+}
+
+function renderLightingResult() {
+  const result = byId("tutorial-result");
+  result.hidden = !lightingLesson() || !tutorialSelection;
+  if (result.hidden) return;
+  const { index, light } = tutorialSelection;
+  const prediction = forecast(state, Mission.peakDustSolar, index, light);
+  const harvest = prediction.harvestSeconds[index];
+  const battery = prediction.batterySeconds;
+  result.textContent = copy.panels.tutorialResult(copy.tray(index + 1), copy.lights[light],
+    Number.isFinite(harvest) ? formatTime(harvest) : copy.noHarvest,
+    Number.isFinite(battery) ? formatTime(battery) : copy.charge);
 }
 
 function renderTutorial(navigate = false) {
@@ -100,6 +128,8 @@ function renderTutorial(navigate = false) {
     byId("tutorial-back").hidden = !tutorialStep;
     byId("tutorial-next").textContent = staticText[tutorialStep === tutorialTargets.length - 1 ? "tutorialDone" : "tutorialNext"][language === "uk" ? 1 : 0];
   }
+  byId("tutorial-try").hidden = !lightingLesson();
+  renderLightingResult();
   window.dispatchEvent(new Event("mission-change"));
   if (navigate) {
     if (target) byId(target).scrollIntoView({ block: "nearest" });
@@ -125,6 +155,7 @@ function renderHUD() {
   const goalText = copy.harvestGoal(harvests > 0);
   if (goal.textContent !== goalText) goal.textContent = goalText;
   goal.dataset.done = String(harvests > 0);
+  byId("final-goal").hidden = !started || finished;
   const crew = byId("crew-status");
   crew.hidden = !state.shelter && phase !== "warning" && phase !== "shelter";
   crew.textContent = state.shelter ? copy.crewSheltered : copy.crewExposed;
@@ -137,7 +168,7 @@ function renderHUD() {
   byId("event-clock").hidden = !event;
   if (byId("event-clock").textContent !== event) byId("event-clock").textContent = event;
   const status = {
-    battery: copy.currentCharge(Number.isFinite(batterySeconds) ? formatTime(batterySeconds) : copy.charge),
+    battery: copy.panels.totalRunway(Number.isFinite(batterySeconds) ? formatTime(batterySeconds) : copy.charge),
     air: copy.systemState(state.airOn && state.powered),
     water: copy.systemState(state.waterOn && state.powered),
     food: copy.foodETA(formatTime(foodSeconds)),
@@ -177,6 +208,8 @@ function renderHUD() {
   meters.battery.element.dataset.backup = String(backupActive);
   meters.food.element.dataset.refilled = String(foodRefilled);
   meters.battery.activity.hidden = !backupActive;
+  const power = powerReadings(energy);
+  meters.battery.detail.textContent = copy.panels.batteryDetail(power.main, power.spare);
   meters.battery.activity.textContent = state.powered ? copy.onBattery : copy.powerShortfall;
   meters.food.activity.hidden = !foodRefilled;
   meters.food.activity.textContent = copy.foodRefilled;
@@ -192,9 +225,7 @@ function score() {
 
 function missionExplanation() {
   const firstHarvest = Math.min(...state.trays.filter((tray) => tray.harvestedAt !== null).map((tray) => tray.harvestedAt));
-  const lastCut = state.lightCuts.at(-1);
   const lessons = [];
-  if (lastCut) lessons.push(copy.lightCut(lastCut.index + 1, formatTime(lastCut.time)));
   if (state.reserveUsed >= .1) lessons.push(copy.reserveUsed(decimal(state.reserveUsed)));
   const stormElapsed = Math.max(0, Math.min(state.time, state.scenario.particleEnd) - state.scenario.particleStart);
   if (stormElapsed >= 1) {
@@ -216,6 +247,28 @@ function missionExplanation() {
     if (state.failure === "radiation") lessons.push(copy.radiationReason);
   }
   return lessons;
+}
+
+function missionDecisions() {
+  const decisions = [];
+  if (state.waterShutdown) {
+    const { time, savings } = state.waterShutdown;
+    decisions.push(copy.panels.waterDecision(formatTime(time), decimal(savings, 2), Math.round(state.water),
+      Mission.beaconReady(state), state.waterOn));
+  }
+  if (state.stormSheltered > 0) {
+    decisions.push(copy.panels.shelterDecision(formatTime(state.stormSheltered), decimal(state.radiation)));
+  }
+  if (state.cleanupStartedAt !== null) {
+    decisions.push(copy.panels.cleanupDecision(formatTime(state.cleanupStartedAt), Math.ceil(state.toxins)));
+  }
+  const lastCut = state.lightCuts.at(-1);
+  if (lastCut) {
+    const harvested = state.trays[lastCut.index].harvestedAt;
+    decisions.push(copy.panels.lightDecision(lastCut.index + 1, formatTime(lastCut.time),
+      harvested === null ? "" : formatTime(harvested)));
+  }
+  return decisions.slice(0, 3);
 }
 
 function renderDebrief() {
@@ -243,7 +296,9 @@ function renderDebrief() {
     state.mission === "extended" && trainingRecord ? copy.previousScore(copy.runScore(trainingRecord)) : "",
     ...state.analyzed.map((sample) => copy.sampleResult[sample])
   ];
-  for (const [id, entries] of [["outcome-explanation", missionExplanation()], ["outcome-stats", stats]]) {
+  const decisions = missionDecisions();
+  byId("outcome-review").hidden = !decisions.length;
+  for (const [id, entries] of [["outcome-decisions", decisions], ["outcome-explanation", missionExplanation()], ["outcome-stats", stats]]) {
     byId(id).replaceChildren(...entries.filter(Boolean).map((label) => {
       const item = document.createElement("li");
       item.textContent = label;
@@ -315,6 +370,7 @@ function tick(now) {
 function resetMission(id) {
   for (const dialog of document.querySelectorAll("dialog[open]")) dialog.close();
   state = newState(id);
+  tutorialSelection = null;
   started = finished = paused = false;
   displayedHarvests = foodNoticeUntil = 0;
   byId("field-hint").open = false;

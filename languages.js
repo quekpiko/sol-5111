@@ -1,6 +1,20 @@
 "use strict";
 
 const staticText = {
+  tutorialTry: ["Try the greenhouse controls", "Спробувати пульт теплиці"],
+  roomTutorial: [
+    "Select Dim, then Bright in the same tray. Compare the harvest time and how long the battery would last at peak dust. The mission clock is stopped.",
+    "Обери «Приглушене», потім «Яскраве» в тому самому лотку. Порівняй час до врожаю та запас заряду на піку бурі. Таймер місії ще не запущено."
+  ],
+  finalGoal: [
+    "The shuttle arrives at the end of Sol 7. Keep the landing beacon powered.",
+    "Шатл прибуде наприкінці 7-го солу. Забезпеч живлення посадкового маяка."
+  ],
+  flightAssumptions: [
+    "Forecast at current sunlight and load. Main battery time excludes the reserve.",
+    "Прогноз за поточного освітлення та навантаження. Час основної батареї розраховано без резерву."
+  ],
+  decisionReview: ["Decisions from this run", "Рішення в цій спробі"],
   briefing: ["Mission briefing", "Брифінг місії"],
   briefingEyebrow: ["SOL 5111 · SEVEN SOLS", "SOL 5111 · СІМ СОЛІВ"],
   storyTitle: ["Your assignment · Fiction", "Твоє завдання · Ігровий сценарій"],
@@ -239,7 +253,7 @@ const languages = {
       solar: "The array supplies the grid. The sensor tracks how the modeled dust storm changes the sunlight reaching it.",
       storage: "Equipment available for transfer to the solar array.",
       ridge: "Catalogue the rock for comparison in the habitat lab.",
-      basin: "Catalogue loose regolith for comparison with the rock sample."
+      basin: "Loose Martian soil and rock fragments."
     },
     roomHint: {
       greenhouse: "Compare time to harvest with battery runtime and the crew’s food deadline. Changing light can help the crew and changes the experiment.",
@@ -371,7 +385,7 @@ const languages = {
       solar: "Панелі живлять базу. Датчик показує, як змодельована буря впливає на доступне сонячне світло.",
       storage: "Обладнання можна перенести до сонячних панелей.",
       ridge: "Зареєструй зразок породи для порівняння в лабораторії.",
-      basin: "Зареєструй реголіт для порівняння зі зразком породи."
+      basin: "Пухкий марсіанський ґрунт і уламки порід."
     },
     roomHint: {
       greenhouse: "Порівняй час до врожаю із зарядом і запасом їжі. Зміна світла може допомогти екіпажу й впливає на результати досліду.",
@@ -424,7 +438,7 @@ languages.en.campaign = {
   tutorialProgress: (step, total) => `TRAINING · ${step}/${total}`,
   tutorial: [
     ["Explore the outpost", "Click a building to walk there and open its controls. Use WASD or the arrow keys to walk manually. Press E at a doorway. Try moving the cadet on the map."],
-    ["One grid, six readings", "Battery, air, water and food are reserves. Crop shows the next harvest and exposure shows the radiation dose. Every powered system shares one grid. Press Space to pause and plan."],
+    ["One grid, six readings", "Battery, air, water and food are reserves. Crop shows the next harvest and exposure shows the radiation dose. Every powered system shares one grid. Open the greenhouse and compare two light settings. The clock starts only when you launch the mission."],
     ["Prepare before starting the clock", "Turn on a greenhouse tray. Carry the spare battery and dust sensor from Storage to the solar panels. The battery supplies backup power, and the sensor shows how dust affects the panels."]
   ],
   reports: [
@@ -503,7 +517,7 @@ languages.uk.campaign = {
   tutorialProgress: (step, total) => `НАВЧАННЯ · ${step}/${total}`,
   tutorial: [
     ["Оглянь аванпост", "Натисни на будівлю, щоб дійти до неї й відкрити пульт. Для ручного руху використовуй WASD або стрілки, біля входу натискай E. Спробуй пройтися картою."],
-    ["Одна мережа й шість показників", "Батарея, повітря, вода та їжа — це запаси. Ріст показує, скільки лишилося до врожаю, а опромінення — накопичену дозу. Усі прилади живляться від однієї мережі. Пробіл ставить гру на паузу."],
+    ["Одна мережа й шість показників", "Батарея, повітря, вода та їжа — це запаси. Ріст показує, скільки лишилося до врожаю, а опромінення — накопичену дозу. Усі прилади живляться від однієї мережі. Відкрий теплицю й порівняй два режими освітлення. Таймер запуститься лише після старту місії."],
     ["Підготуйся до запуску таймера", "Увімкни світло над одним лотком. Віднеси резервну батарею й датчик пилу зі складу до панелей. Батарея підхопить живлення, а датчик покаже, як пил знижує виробіток."]
   ],
   reports: [
@@ -579,6 +593,58 @@ for (const [id, keys] of Object.entries({ en: ["GREENHOUSE BREACH", "RESCUE BEAC
   languages[id].phases.breach = keys[0];
   languages[id].phases.beacon = keys[1];
 }
+
+languages.en.panels = {
+  harvestETA: "Time to harvest",
+  peakETA: "Battery at peak dust",
+  tutorialResult: (tray, light, harvest, battery) => `${tray}, ${light} · Harvest ${harvest} · Battery at peak dust ${battery}`,
+  totalRunway: (time) => `Current conditions with reserve · ${time}`,
+  batteryDetail: (main, spare) => `Main ${main} · Reserve ${spare}`,
+  reserveValue: (amount) => `${amount} u`,
+  beaconPanel: "Landing readouts",
+  shelterPanel: "Shelter readouts",
+  fields: { signal: "Signal", landing: "Time to touchdown", main: "Main battery", spare: "Reserve left", particles: "Particle event", ventilation: "Ventilation" },
+  particles: { quiet: "No particle event", expected: "Particle event expected", active: "Particle event in progress", ended: "Particle event ended" },
+  ventilation: (status) => ({ standby: "Off · shelter unoccupied", running: "Running", offline: "Offline · check main power and the air system" })[status],
+  leaveShelter: (saving, particles) => {
+    const access = `Saves ${saving} u/s and restores map access.`;
+    if (particles === "active") return `${access} Outside exposure rises faster during the particle event.`;
+    if (particles === "expected") return `${access} Return before the particles arrive.`;
+    if (particles === "ended") return `Particle event ended. ${access}`;
+    return access;
+  },
+  regolith: "Collect regolith and analyze it in the habitat. Analysis unlocks greenhouse cleanup. Outside exposure rises during a particle event.",
+  waterDecision: (time, saving, water, signal, restored) => `At ${time}, you switched off the water recycler, cutting grid demand by ${saving} u/s.${restored ? " You switched it back on later." : ""} At the end, water was ${water}% and the beacon ${signal ? "held" : "did not hold"} a signal.`,
+  shelterDecision: (time, dose) => `You stayed in the shelter for ${time} during the particle event. Total exposure was ${dose} points.`,
+  cleanupDecision: (time, toxins) => `You started greenhouse cleanup at ${time}. At the end, contamination was ${toxins}%.`,
+  lightDecision: (tray, time, harvest) => `You reduced the light on tray ${tray} at ${time}. ${harvest ? `It was harvested at ${harvest}.` : "It had not been harvested by the end."}`
+};
+
+languages.uk.panels = {
+  harvestETA: "До врожаю",
+  peakETA: "Заряд на піку бурі",
+  tutorialResult: (tray, light, harvest, battery) => `${tray}, ${light} · До врожаю ${harvest} · Заряд на піку бурі ${battery}`,
+  totalRunway: (time) => `За поточних умов із резервом · ${time}`,
+  batteryDetail: (main, spare) => `Основна ${main} · Резерв ${spare}`,
+  reserveValue: (amount) => `${amount} од.`,
+  beaconPanel: "Дані для посадки",
+  shelterPanel: "Стан укриття",
+  fields: { signal: "Сигнал", landing: "До посадки", main: "Основна батарея", spare: "Залишок резерву", particles: "Потік частинок", ventilation: "Вентиляція" },
+  particles: { quiet: "Радіаційної події немає", expected: "Очікується потік", active: "Потік триває", ended: "Потік завершився" },
+  ventilation: (status) => ({ standby: "Вимкнено · укриття порожнє", running: "Працює", offline: "Не працює · перевір живлення й подачу повітря" })[status],
+  leaveShelter: (saving, particles) => {
+    const access = `Економить ${saving} од./с і відкриває доступ до карти.`;
+    if (particles === "active") return `${access} Надворі опромінення зростатиме швидше, поки триває потік.`;
+    if (particles === "expected") return `${access} Повернися до приходу потоку.`;
+    if (particles === "ended") return `Потік завершився. ${access}`;
+    return access;
+  },
+  regolith: "Відбери реголіт і проаналізуй його в житловому модулі. Аналіз відкриє очищення теплиці. Під час радіаційної події надворі зростає опромінення.",
+  waterDecision: (time, saving, water, signal, restored) => `На позначці ${time} ти вимкнув переробник води. Навантаження зменшилося на ${saving} од./с.${restored ? " Згодом ти ввімкнув його знову." : ""} На фініші залишилося ${water}% води, а маяк ${signal ? "тримав" : "не тримав"} сигнал.`,
+  shelterDecision: (time, dose) => `Ти пробув в укритті ${time} під час потоку частинок. Сумарне опромінення склало ${dose} бала.`,
+  cleanupDecision: (time, toxins) => `Ти почав очищення теплиці на позначці ${time}. Наприкінці спроби забруднення становило ${toxins}%.`,
+  lightDecision: (tray, time, harvest) => `Ти зменшив світло в лотку ${tray} на позначці ${time}. ${harvest ? `Урожай із цього лотка зібрано на позначці ${harvest}.` : "До кінця спроби врожай не зібрано."}`
+};
 
 function readLanguage() {
   try {

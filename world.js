@@ -13,7 +13,7 @@ const stations = {
   storage: { x: 31, y: 84, label: "stationStorage", area: "7% 73%, 13% 63%, 26% 58%, 32% 66%, 29% 82%, 18% 89%, 8% 86%" },
   ridge: { x: 15, y: 22, label: "stationRidge", sample: true },
   basin: { x: 67, y: 59, label: "stationBasin", sample: true },
-  beacon: { x: 54, y: 84, label: "stationBeacon" }
+  beacon: { x: 54, y: 75, label: "stationBeacon" }
 };
 const markers = [...terrain.querySelectorAll("[data-station]")];
 const sites = new Map();
@@ -124,6 +124,7 @@ function updateWorld() {
   terrain.dataset.ventilation = String(state.shelter && state.powered && state.airOn);
   terrain.dataset.weakSolar = String(forecast(state).solar < 5);
   terrain.dataset.sensor = state.sensor;
+  terrain.dataset.dome = state.breach;
   byId("cargo").textContent = [
     state.sensor === "carried" ? copy.sensorItem : "",
     state.pack === "carried" ? copy.batteryItem : ""
@@ -239,10 +240,52 @@ function addControl(label, execute, key, parent = byId("room-controls")) {
   return button;
 }
 
+let flightValues = {};
+
+function buildFlightPanel(id) {
+  const panel = byId("flight-panel");
+  const list = byId("flight-readings");
+  list.replaceChildren();
+  panel.hidden = id !== "shelter" && id !== "beacon";
+  flightValues = {};
+  if (panel.hidden) return;
+  const { panels } = copy;
+  byId("flight-panel-title").textContent = id === "beacon" ? panels.beaconPanel : panels.shelterPanel;
+  const fields = id === "beacon" ? ["signal", "landing", "main", "spare"] : ["particles", "main", "spare", "ventilation"];
+  for (const field of fields) {
+    const row = document.createElement("div");
+    const term = document.createElement("dt");
+    const value = document.createElement("dd");
+    value.id = `flight-${field}`;
+    term.textContent = panels.fields[field];
+    row.append(term, value);
+    list.append(row);
+    flightValues[field] = value;
+  }
+}
+
+function refreshFlightPanel(energy, particles) {
+  if (byId("flight-panel").hidden) return;
+  const { panels, campaign } = copy;
+  const readings = powerReadings(energy);
+  if (currentRoom === "beacon") {
+    readings.signal = Mission.beaconReady(state) ? campaign.signalReady :
+      state.beaconOn ? campaign.signalProgress(formatTime(Mission.beaconLockSeconds - state.beaconSignal)) : campaign.signalNeeded;
+    readings.landing = formatTime(state.scenario.duration - state.time);
+  } else {
+    readings.particles = [panels.particles[particles], eventCountdown()].filter(Boolean).join(" · ");
+    readings.ventilation = panels.ventilation(!state.shelter ? "standby" : state.powered && state.airOn ? "running" : "offline");
+  }
+  for (const [key, text] of Object.entries(readings)) {
+    if (flightValues[key].textContent !== text) flightValues[key].textContent = text;
+  }
+}
+
 function buildRoom() {
   const id = currentRoom;
   byId("room-title").textContent = stationLabel(id);
   byId("room-view").dataset.room = stations[id].inside ? id : "";
+  buildFlightPanel(id);
   byId("room-view").hidden = !stations[id].inside;
   byId("room-detail").textContent = id === "beacon" ? copy.campaign.beaconRoom : copy.room[id];
   byId("room-hint-text").textContent = id === "beacon" ? copy.campaign.phaseHints.beacon : copy.roomHint[id];
@@ -269,7 +312,13 @@ function buildRoom() {
       const controls = document.createElement("div");
       controls.className = "tray-controls";
       for (const light of Object.keys(copy.lights)) {
-        const button = addControl(copy.lights[light], () => Mission.setTrayLight(state, index, light), light, controls);
+        const button = addControl(copy.lights[light], () => {
+          Mission.setTrayLight(state, index, light);
+          if (lightingLesson()) {
+            tutorialSelection = { index, light };
+            renderLightingResult();
+          }
+        }, light, controls);
         const harvest = button.querySelector("small");
         harvest.className = "tray-harvest";
         const battery = document.createElement("small");
@@ -281,13 +330,20 @@ function buildRoom() {
         selected.textContent = copy.selected;
         button.querySelector("strong").append(selected);
         button.append(battery, change);
+        for (const [row, label] of [[harvest, copy.panels.harvestETA], [battery, copy.panels.peakETA]]) {
+          const name = document.createElement("span");
+          const value = document.createElement("span");
+          name.textContent = label;
+          value.className = "forecast-value";
+          row.append(name, value);
+        }
       }
       panel.append(title, meter, stats, controls);
       byId("room-trays").append(panel);
     });
   } else if (id === "habitat") {
     addControl(copy.air, () => { state.airOn = !state.airOn; }, "air");
-    addControl(copy.water, () => { state.waterOn = !state.waterOn; }, "water");
+    addControl(copy.water, () => Mission.toggleWater(state), "water");
     for (const sample of ["basin", "ridge"]) {
       addControl(copy.campaign.analyze[sample], () => { state.lab = { sample, remaining: 16 }; }, `lab-${sample}`);
     }
@@ -384,18 +440,20 @@ function refreshTrays() {
       button.disabled = done;
       button.setAttribute("aria-pressed", String(!done && selected));
       button.querySelector(".tray-selected").hidden = done || !selected;
-      button.querySelector(".tray-harvest").textContent = done ? "" : Number.isFinite(eta) ? copy.cropETA(formatTime(eta)) :
-        light === "off" && !selected ? copy.stopsGrowth : copy.noHarvest;
-      button.querySelector(".tray-battery").textContent = done ? "" :
-        copy.peakCharge(Number.isFinite(goal.batterySeconds) ? formatTime(goal.batterySeconds) : copy.charge);
+      const harvestRow = button.querySelector(".tray-harvest");
+      const batteryRow = button.querySelector(".tray-battery");
+      harvestRow.hidden = batteryRow.hidden = done;
+      harvestRow.querySelector(".forecast-value").textContent = Number.isFinite(eta) ? formatTime(eta) : "—";
+      batteryRow.querySelector(".forecast-value").textContent = Number.isFinite(goal.batterySeconds) ? formatTime(goal.batterySeconds) : copy.charge;
       const harvestDelta = timeDifference(peak.harvestSeconds[index], eta);
       const batteryDelta = timeDifference(peak.batterySeconds, goal.batterySeconds);
       const change = [copy.campaign.draw(decimal(goal.load - forecast(state, current.solar, index, "off").load, 2))];
+      if (!Number.isFinite(eta)) change.push(state.toxins > 0 ? copy.campaign.growthLocked : copy.noHarvest);
       if (harvestDelta) change.push(copy.harvestDelta(harvestDelta, eta < peak.harvestSeconds[index]));
       if (!Number.isFinite(peak.harvestSeconds[index]) && Number.isFinite(eta)) change.push(copy.startsGrowth);
       if (batteryDelta) change.push(copy.chargeDelta(batteryDelta, goal.batterySeconds > peak.batterySeconds));
       if (current.net >= 0 && live.net < 0) change.push(copy.startsDischarge);
-      button.querySelector(".tray-change").textContent = done ? "" : (selected ? change.slice(0, 1) : change).join(" · ");
+      button.querySelector(".tray-change").textContent = done ? "" : (selected && Number.isFinite(eta) ? change.slice(0, 1) : change).join(" · ");
     }
   }
   const feedback = byId("room-feedback");
@@ -405,6 +463,8 @@ function refreshTrays() {
 function refreshRoom() {
   const energy = forecast(state);
   const phase = phaseKey();
+  const particles = Mission.particleStatus(state);
+  refreshFlightPanel(energy, particles);
   const alert = phase === "breach" ? copy.campaign.breachAlert : copy.roomAlerts[phase];
   const banner = byId("room-alert");
   banner.hidden = !alert;
@@ -424,12 +484,14 @@ function refreshRoom() {
       copy.relativeSolar(Mission.solarPercent(energy.solar)));
   }
   const campaign = copy.campaign;
+  byId("room-tutorial").hidden = currentRoom !== "greenhouse" || !lightingLesson();
   const toxins = byId("greenhouse-alert");
   toxins.hidden = currentRoom !== "greenhouse" || state.breach === "intact";
   if (!toxins.hidden) toxins.textContent = state.toxins > 0 ? campaign.toxinsStatus(
     Math.ceil(state.toxins), state.breach === "open", state.decon ? formatTime(state.toxins / Mission.deconRate) : ""
   ) : campaign.clean;
   byId("room-view").dataset.contaminated = String(currentRoom === "greenhouse" && state.toxins > 0);
+  byId("room-view").dataset.dome = currentRoom === "greenhouse" ? state.breach : "intact";
   byId("room-exit").disabled = state.shelter;
   for (const button of byId("room-controls").querySelectorAll("button")) {
     const key = button.dataset.control;
@@ -441,7 +503,7 @@ function refreshRoom() {
       button.setAttribute("aria-pressed", String(active));
     } else if (key === "shelter") {
       button.querySelector("strong").textContent = state.shelter ? campaign.leaveShelter : copy.ventilation;
-      line.textContent = state.shelter ? campaign.unshield(draw("shelter")) : campaign.shield(draw("shelter"));
+      line.textContent = state.shelter ? copy.panels.leaveShelter(draw("shelter"), particles) : campaign.shield(draw("shelter"));
     } else if (key.startsWith("lab-")) {
       const sample = key.slice(4);
       const complete = state.analyzed.includes(sample);
@@ -464,15 +526,13 @@ function refreshRoom() {
     } else if (key === "beacon") {
       button.querySelector("strong").textContent = state.beaconOn ? campaign.stopBeacon : campaign.beaconToggle;
       line.textContent = campaign.beaconCost(draw("beacon"), Mission.beaconLockSeconds);
-      byId("room-feedback").textContent = Mission.beaconReady(state) ? campaign.signalReady :
-        state.beaconOn ? campaign.signalProgress(formatTime(Mission.beaconLockSeconds - state.beaconSignal)) : campaign.signalNeeded;
     } else {
       if (key === "pack") button.disabled = state.pack !== "storage";
       if (key === "connect") button.disabled = state.pack !== "carried";
       if (key === "sensor") button.disabled = state.sensor !== "storage";
       if (key === "install") button.disabled = state.sensor !== "carried";
       if (key === "sample") button.disabled = state.samples.includes(currentRoom);
-      line.textContent = campaign.fieldActions[key];
+      line.textContent = key === "sample" && currentRoom === "basin" ? copy.panels.regolith : campaign.fieldActions[key];
     }
   }
   if (currentRoom === "greenhouse") {
@@ -480,8 +540,6 @@ function refreshRoom() {
     refreshTrays();
   } else if (currentRoom === "solar") {
     refreshTelemetry();
-  } else if (currentRoom === "shelter") {
-    byId("room-feedback").textContent = copy.shelterStatus(decimal(exposureRate(state), 2), state.shelter && state.powered && state.airOn);
   }
 }
 
@@ -538,6 +596,7 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("keyup", (event) => keys.delete(event.code));
 window.addEventListener("blur", () => keys.clear());
 interactButton.addEventListener("click", () => { if (nearby && !destination) enter(nearby); });
+byId("tutorial-try").addEventListener("click", () => walkTo("greenhouse"));
 guideButton.addEventListener("click", () => {
   if (finished) {
     renderDebrief();

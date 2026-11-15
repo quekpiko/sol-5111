@@ -390,3 +390,82 @@ body[data-tutorial="hud"] #terrain { height: clamp(210px, 37svh, 350px); }
 @media (prefers-reduced-motion: reduce) {
   #room-view[data-contaminated="true"]::after { animation: none; }
 }
+
+#final-goal {
+  align-self: center;
+  color: #f8dfaf;
+  border-left: 2px solid #c4985b;
+  padding: 3px 9px;
+  font-size: .82rem;
+  font-weight: 650;
+}
+#tutorial-result { margin-top: 5px; color: #ffdf9a; font-weight: 700; }
+.flight-panel, .decision-report {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid #786747;
+  border-radius: 4px;
+  background: #292419;
+}
+.flight-panel h3, .decision-report h3 { font-size: .92rem; color: #ffe3b7; margin-bottom: 5px; }
+.flight-panel dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin: 0 0 5px;
+}
+.flight-panel dt { font-size: .71rem; color: #d5c6ac; }
+.flight-panel dd {
+  font: 700 .86rem/1.28 var(--mono);
+  color: #ffebc8;
+  overflow-wrap: anywhere;
+  margin: 2px 0;
+}
+.flight-panel p { font-size: .73rem; }
+.decision-report ul { padding-inline-start: 1.2em; margin: 0; color: #ead6b6; font-size: .86rem; }
+.decision-report li + li { margin-top: 4px; }
+
+.tray { min-width: 0; display: flex; flex-direction: column; }
+.tray-controls { flex: 1; grid-template-rows: repeat(3, 1fr); }
+.tray-controls button { min-width: 0; overflow-wrap: anywhere; }
+.tray-controls small:is(.tray-harvest, .tray-battery) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 5px;
+  color: #dfd4bc;
+}
+.tray-controls .forecast-value {
+  color: #ffe9bc;
+  font: 740 clamp(.91rem, 2.4vw, 1.15rem)/1.2 var(--mono);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.tray-controls .tray-harvest .forecast-value { color: #dbe8b0; }
+.tray-controls .tray-change { color: #cfba98; }
+
+.terrain[data-dome="open"] .surface-art::after,
+#room-view[data-dome="open"]::before {
+  content: "";
+  position: absolute;
+  background: url("assets/greenhouse-breach.png") center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+.terrain[data-dome="open"] .surface-art::after {
+  inset: 7% auto auto 70%;
+  width: 22%;
+  height: 23%;
+  transform: rotate(13deg);
+  filter: brightness(.85) saturate(.9);
+}
+#room-view[data-dome="open"]::before {
+  z-index: 1;
+  inset: 25% auto auto 28%;
+  width: 32%;
+  height: 53%;
+  opacity: .91;
+}
+@media (max-width: 490px) {
+  .room-trays { grid-template-columns: 1fr; }
+  #final-goal { flex-basis: 100%; }
+}

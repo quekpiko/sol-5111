@@ -7,12 +7,13 @@
   <meta name="theme-color" content="#161712">
   <title>Sol 5111 — Mars Mission Trainer</title>
   <link rel="stylesheet" href="style.css?v=seven-sols-1">
-  <link rel="stylesheet" href="surface.css?v=seven-sols-1">
-  <script src="engine.js?v=seven-sols-1" defer></script>
-  <script src="languages.js?v=seven-sols-1" defer></script>
-  <script src="game.js?v=seven-sols-1" defer></script>
+  <link rel="stylesheet" href="surface.css?v=flight-panels-2">
+  <script src="engine.js?v=flight-panels-2" defer></script>
+  <script src="languages.js?v=flight-panels-2" defer></script>
+  <script src="game.js?v=flight-panels-2" defer></script>
   <script src="avatar.js?v=field-2" defer></script>
-  <script src="world.js?v=seven-sols-1" defer></script>
+  <script src="world.js?v=flight-panels-2" defer></script>
+  <link rel="preload" href="assets/greenhouse-breach.png" as="image">
 </head>
 <body>
   <header class="mission-bar">
@@ -28,10 +29,11 @@
   </header>
   <main class="game">
     <section class="tutorial" id="tutorial" aria-labelledby="tutorial-title" hidden>
-      <div><p class="eyebrow" id="tutorial-step"></p><h2 id="tutorial-title"></h2><p id="tutorial-text"></p></div>
+      <div><p class="eyebrow" id="tutorial-step"></p><h2 id="tutorial-title"></h2><p id="tutorial-text"></p><p id="tutorial-result" role="status" hidden></p></div>
       <div class="action-row">
         <button class="secondary" id="tutorial-skip" type="button" data-i18n="tutorialSkip">Skip tutorial</button>
         <button class="secondary" id="tutorial-back" type="button" data-i18n="tutorialBack">Back</button>
+        <button class="secondary" id="tutorial-try" type="button" data-i18n="tutorialTry" hidden>Open greenhouse</button>
         <button class="primary" id="tutorial-next" type="button" data-i18n="tutorialNext">Next</button>
       </div>
     </section>
@@ -53,6 +55,7 @@
       <ul id="setup-list"></ul>
     </section>
     <div class="mission-status" id="mission-status">
+      <p class="landing-objective" id="final-goal" data-i18n="finalGoal" hidden></p>
       <span id="harvest-goal" role="status"></span>
       <span id="crew-status"></span>
       <span id="toxins-goal" hidden></span>
@@ -120,6 +123,12 @@
     <div class="room-view" id="room-view" aria-hidden="true"></div>
     <p class="room-detail" id="room-detail"></p>
     <p class="room-detail" id="room-power" hidden></p>
+    <p class="power-choice" id="room-tutorial" data-i18n="roomTutorial" hidden></p>
+    <section class="flight-panel" id="flight-panel" aria-labelledby="flight-panel-title" hidden>
+      <h3 id="flight-panel-title"></h3>
+      <dl id="flight-readings"></dl>
+      <p id="flight-assumptions" data-i18n="flightAssumptions"></p>
+    </section>
     <p id="greenhouse-alert" class="power-choice contamination" hidden></p>
     <p id="room-power-choice" class="power-choice" hidden></p>
     <div class="room-trays" id="room-trays" hidden></div>
@@ -148,6 +157,10 @@
     <div class="drawer-head"><h2 id="outcome-title"></h2><form method="dialog"><button class="secondary" data-i18n="exitRoom">Exit to map</button></form></div>
     <p id="outcome-text"></p>
     <p id="outcome-rank" hidden></p>
+    <section class="decision-report" id="outcome-review" aria-labelledby="outcome-review-title" hidden>
+      <h3 id="outcome-review-title" data-i18n="decisionReview">Decisions from this run</h3>
+      <ul id="outcome-decisions"></ul>
+    </section>
     <ul id="outcome-explanation"></ul>
     <ul id="outcome-stats"></ul>
     <div class="action-row">
